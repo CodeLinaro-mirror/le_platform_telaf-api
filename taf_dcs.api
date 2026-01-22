@@ -1045,14 +1045,15 @@ FUNCTION StartSessionAsync
  * Stops (synchronously) a cellular data session for the given profile reference.
  *
  * @return
- *  - LE_OK -- Succeeded.
- *  - LE_NOT_FOUND -- Can't find a data call.
- *  - LE_OUT_OF_RANGE -- PdpType type is unknown.
+ *  - LE_OK            -- Succeeded.
+ *  - LE_NOT_FOUND     -- Can't find a data call.
+ *  - LE_OUT_OF_RANGE  -- PdpType type is unknown.
  *  - LE_BAD_PARAMETER -- Call context is NULL.
- *  - LE_TIMEOUT -- Timeout to stop a data call.
- *  - LE_IN_PROGRESS -- The profile is in use and a data call is in progress.
- *  - LE_NOT_POSSIBLE -- Data profile is not yet created.
- *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT       -- Timeout to stop a data call.
+ *  - LE_IN_PROGRESS   -- The profile is in use and a data call is in progress.
+ *  - LE_NOT_POSSIBLE  -- Data profile is not yet created.
+ *  - LE_TERMINATED    -- Data call was terminated.
+ *  - LE_FAULT         -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t StopSession

@@ -99,6 +99,7 @@ FUNCTION le_result_t StartSessionAsync
  * - LE_IN_PROGRESS                  Session stop is already in progress.
  * - LE_TIMEOUT                      Timed out while attempting to stop the data call.
  * - LE_NOT_POSSIBLE                 Data profile is not yet created.
+ * - LE_TERMINATED                   Session was terminated.
  * - LE_FAULT                        Failed to stop the data call.
  */
 //--------------------------------------------------------------------------------------------------
@@ -113,12 +114,13 @@ FUNCTION le_result_t StopSession
  *
  * @returns
  * - LE_OK                           Successfully stopped the data call.
- * - LE_NOT_FOUND                    Could not find the data call to stop .
+ * - LE_NOT_FOUND                    Could not find the data call to stop.
  * - LE_OUT_OF_RANGE                 PDP type is unknown.
  * - LE_BAD_PARAMETER                At least one bad parameter was passed.
  * - LE_IN_PROGRESS                  Session stop is already in progress.
  * - LE_TIMEOUT                      Timed out while attempting to stop the data call.
  * - LE_NOT_POSSIBLE                 Data profile is not yet created.
+ * - LE_TERMINATED                   Session was terminated.
  * - LE_FAULT                        Failed to stop the data call.
  */
 //--------------------------------------------------------------------------------------------------
