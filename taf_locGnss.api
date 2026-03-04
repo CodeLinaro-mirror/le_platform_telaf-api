@@ -1115,6 +1115,103 @@
    }
    @endverbatim
  *
+ * - taf_locGnss_GetNavigationSolution()
+ * This API is typically Called inside the PositionHandlerFunction() to retrieve the navigation
+ * solution mask used for the current position fix from the position sample reference.
+ *
+ * @verbatim
+   uint32_t navSolutionMask;
+   if(taf_locGnss_GetNavigationSolution(positionSampleRef, &navSolutionMask) == LE_OK)
+   {
+     // Process after successfully getting the nav solution mask.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_GetDgnssStationIds()
+ * This API is typically Called inside the PositionHandlerFunction() to retrieve  the
+ * list of DGNSS monitoring station IDs,which is used in the position fix
+ * from the position sample reference.
+ *
+ * @verbatim
+   uint16_t dgnssStationIds[TAF_LOCGNSS_MAX_MONITOR_STATION_IDS ];
+   size_t idsLen = TAF_LOCGNSS_MAX_MONITOR_STATION_IDS;
+   if(taf_locGnss_GetDgnssStationIds(positionSampleRef, dgnssStationIds, &idsLen) == LE_OK)
+   {
+     // Process after successfully getting the monitoring station ids.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_CreateDgnssSource()
+ * Create a DGNSS injection source
+ * with the specified input format.
+ *
+ * @b NOTE: Only one DGNSS injection source is permitted system-wide at any given time.
+ * If the same client calls this API again with the same format, the previously
+ * created source reference is returned.
+ * If the same client calls this API with a different format, a new source
+ * reference is created.
+ * If another client attempts to create a DGNSS source while one already exists,
+ * this API returns NULL.
+ *
+ * @verbatim
+   taf_locGnss_DgnssSourceRef_t sourceRef;
+   if(taf_locGnss_CreateDgnssSource(taf_locGnss_DgnssFormat_t format) != NULL)
+   {
+     // Source reference successfully created or retrieved.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_ReleaseDgnssSource()
+ * Release a DGNSS injection source previously created using
+ * taf_locGnss_CreateDgnssSource().
+ *
+ * @verbatim
+   taf_locGnss_DgnssSourceRef_t sourceRef;
+   if(taf_locGnss_ReleaseDgnssSource(sourceRef) == LE_OK)
+   {
+     // Process after successfully releasing the dgnss source created.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_InjectDgnssCorrection()
+ * Inject DGNSS correction data after a DGNSS source has been created.
+ *
+ * @b NOTE: This API must be called only after a DGNSS source has been successfully created.
+ * Calling this API without a valid source reference results in an error.
+ *
+ * @verbatim
+   taf_locGnss_DgnssSourceRef_t sourceRef;
+   uint8_t* buffer;
+   size_t bufferSize;
+   if(taf_locGnss_InjectDgnssCorrection(sourceRef, buffer, bufferSize) == LE_OK)
+   {
+     // Process after successfully injecting correction data.
+   }
+   @endverbatim
+ *
+ * DGNSS status notifications can be registered using
+ * taf_locGnss_AddDgnssStatusChangeHandler() and unregistered using
+ * taf_locGnss_RemoveDgnssStatusChangeHandler().
+ *
+ * When a DGNSS status update is reported, the registered handler is invoked.
+ *
+ * @verbatim
+   static void DgnssStatusFunction
+   (
+      taf_locGnss_DgnssSourceRef_t sourceRef,
+      taf_locGnss_DgnssStatus_t dgnssStatus,
+      void* contextPtr
+   )
+   {
+      LE_INFO("dgnssStatus: %d", dgnssStatus);
+   }
+   static taf_locGnss_DgnssStatusChangeHandlerRef_t DgnssStatusHandlerRef = NULL;
+   DgnssStatusHandlerRef = taf_locGnss_AddDgnssStatusChangeHandler(DgnssStatusFunction, NULL);
+   LE_ASSERT(NULL != DgnssStatusHandlerRef);
+   taf_locGnss_RemoveDgnssStatusChangeHandler(DgnssStatusHandlerRef);
+   @endverbatim
+ *
+ *
  * @subsection taf_locGnss_GetLeapSeconds Get leap seconds event information
  *
  * The leap seconds event information is retrieved by calling taf_locGnss_GetLeapSeconds() API.
@@ -1262,6 +1359,20 @@ DEFINE URL_PATH_MAX = 128;
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE NUMBER_OF_SIGNAL_TYPES_MAX = 23;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define the maximum number of bytes for the injection correction data.
+ */
+//--------------------------------------------------------------------------------------------------
+DEFINE DATA_LEN_MAX = 2048;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define the maximum number of DGNSS monitoring station IDs.
+ */
+//--------------------------------------------------------------------------------------------------
+DEFINE MAX_MONITOR_STATION_IDS = 1024;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -2179,7 +2290,7 @@ ENUM KinematicsDataValidityType {
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Type of SBAS correction.
+ * Type of SBAS correction. @deprecated This type is scheduled to be removed.
  */
 //--------------------------------------------------------------------------------------------------
 ENUM SbasBitMask {
@@ -3526,6 +3637,8 @@ FUNCTION le_result_t GetSvUsedInPosition
  *
  * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
  *       and the client will be killed.
+ *
+ * @deprecated This function is deprecated.  Use taf_locGnss_GetNavigationSolution instead.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetSbasCorrection
@@ -4348,3 +4461,194 @@ FUNCTION le_result_t  GetMeasDataValidityMask
     MeasSample measSampleRef  IN,                       ///< Measurement sample reference.
     uint32 measDataValidityMask[MEASUREMENT_INFO_MAX] OUT  ///< GetMeasDataValidityMask.
 ) = 97;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Type of navigation solutions that contribute to the GNSS location.
+ */
+//--------------------------------------------------------------------------------------------------
+BITMASK NavigationSolutionType {
+    NAV_SBAS_SOLUTION_IONO,           ///< Bit mask to specify whether
+                                      ///< SBAS ionospheric solution is used.
+    NAV_SBAS_SOLUTION_FAST,           ///< Bit mask to specify whether
+                                      ///< SBAS fast solution is used.
+    NAV_SBAS_SOLUTION_LONG,           ///< Bit mask to specify whether
+                                      ///< SBAS long solution is used.
+    NAV_SBAS_INTEGRITY,               ///< Bit mask to specify whether
+                                      ///< SBAS integrity information is used.
+    NAV_DGNSS_SOLUTION,               ///< Bit mask to specify whether
+                                      ///< DGNSS solution is used.
+    NAV_RTK_SOLUTION,                 ///< Bit mask to specify whether
+                                      ///< RTK solution is used.
+    NAV_PPP_SOLUTION,                 ///< Bit mask to specify whether
+                                      ///< PPP solution is used.
+    NAV_RTK_FIXED_SOLUTION,           ///< Bit mask to specify whether RTK fixed solution is used.
+                                      ///< If only solution RTK is set,
+                                      ///< fixes shall be treated as RTK_FLOAT solution.
+                                      ///< If both solutions RTK and RTK_FIXED are set,
+                                      ///< fixes shall be treated as RTK_FIXED solution.
+    NAV_ONLY_SBAS_CORRECTED_SV_USED   ///< Bit mask to specify
+                                      ///< only SBAS corrected SV is used.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the navigation solution mask used to indicate solutions used in the fix
+ * per client session.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *  - LE_OUT_OF_RANGE   If the retrieved parameter is invalid.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+FUNCTION le_result_t GetNavigationSolution
+(
+    Sample positionSampleRef IN,       ///< Position sample reference.
+    uint32 navSolution OUT          ///< Navigation solution bit mask @ref taf_locGnss_NavigationSolutionType.
+) = 98;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the list of DGNSS monitoring station IDs providing corrections per client session.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+FUNCTION le_result_t GetDgnssStationIds
+(
+    Sample positionSampleRef IN,                      ///< Position sample reference.
+    uint16 stationIds[MAX_MONITOR_STATION_IDS] OUT    ///< Monitoring station IDs; range is 0 to 1023.
+) = 99;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Defines the RTCM injection data format.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM DgnssFormat
+{
+    DGNSS_FORMAT_UNKNOWN      = 0,
+    DGNSS_FORMAT_RTCM_3        = 1,
+    DGNSS_FORMAT_3GPP_RTK_R15 = 2
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Defines the status reported by CDFW for RTCM injection.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM DgnssStatus{
+    DGNSS_STATUS_DATA_SOURCE_NOT_SUPPORTED = 1,
+    DGNSS_STATUS_DATA_FORMAT_NOT_SUPPORTED = 2,
+    DGNSS_STATUS_OTHER_SOURCE_IN_USE = 3,
+    DGNSS_STATUS_MESSAGE_PARSE_ERROR = 4,
+    DGNSS_STATUS_DATA_SOURCE_USABLE = 5,
+    DGNSS_STATUS_DATA_SOURCE_NOT_USABLE = 6,
+    DGNSS_STATUS_CDFW_STOP_SOURCE_INJECT = 7
+};
+
+REFERENCE DgnssSource;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Creates a DGNSS source.
+ * Only one source is permitted at any given time. If a new source is to be used, user must call
+ * taf_locGnss_ReleaseDgnssSource() to release the previous source before calling this function.
+ *
+ * @instaging
+ *
+ * @return
+ *  - sourceRef   Succeeded @ref DgnssSource
+ *  - NULL        Failed or another client tried to create.
+ *  - NULL        The Location service state is not ready or active.
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION DgnssSource CreateDgnssSource
+(
+    DgnssFormat dgnssDataFormat   IN
+) = 100;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Releases the current DGNSS injection source (previously created by a
+ * taf_locGnss_CreateDgnssSource() call).
+ * This function should be called when the current injection data is determined to be
+ * no longer suitable and a new source needs to be created and used for injection.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK          Succeeded.
+ *  - LE_FAULT       Failed.
+ *  - LE_NOT_PERMITTED The Location service state is not ready or active.
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t ReleaseDgnssSource
+(
+    DgnssSource sourceRef IN
+) = 101;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Injects the correction data.
+ * This function should be called after a DGNSS injection source has been created through an
+ * explicit call to taf_locGnss_CreateDgnssSource().
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK          Succeeded.
+ *  - LE_FAULT       Failed.
+ *  - LE_BAD_PARAMETER Invalid parameter provided.
+ *  - LE_NOT_PERMITTED The Location service state is not ready or active.
+ *
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t InjectDgnssCorrection
+(
+    DgnssSource sourceRef IN,                ///< Source reference created for injection.
+    uint8 correctionData[DATA_LEN_MAX] IN    ///< The correction data for injection.
+) = 102;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Handler for DGNSS status.
+ *
+ * @instaging
+ *
+ * @param[in] sourceRef               Source reference created for injection.
+ * @param[in] contextPtr              Context pointer.
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+HANDLER DgnssStatusChangeHandler
+(
+    DgnssSource sourceRef,
+    DgnssStatus Status
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This event provides the DGNSS injection status.
+ *
+ * @instaging
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+EVENT DgnssStatusChange
+(
+    DgnssStatusChangeHandler handler
+) = (103,104);
