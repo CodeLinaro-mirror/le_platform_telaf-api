@@ -733,7 +733,7 @@ FUNCTION le_result_t GetThermalZoneType
 FUNCTION le_result_t GetThermalZoneCurrentTemp
 (
     ThermalZone ThermalZoneRef  IN,      ///< Thermal zone reference
-    uint32      currTemp        OUT      ///< Thermal zone current temperature associated with
+    int32      currTemp        OUT      ///< Thermal zone current temperature associated with
                                          ///< the input thermal zone reference
 ) = 16;
 
@@ -750,7 +750,7 @@ FUNCTION le_result_t GetThermalZoneCurrentTemp
 FUNCTION le_result_t GetThermalZonePassiveTemp
 (
     ThermalZone ThermalZoneRef  IN,       ///< Thermal zone reference
-    uint32      passiveTemp     OUT       ///< Thermal zone passive temperature associated with
+    int32      passiveTemp     OUT       ///< Thermal zone passive temperature associated with
                                           ///< the input thermal zone reference
 ) = 17;
 
@@ -819,7 +819,7 @@ FUNCTION le_result_t GetTripPointType
 FUNCTION le_result_t GetTripPointThreshold
 (
     TripPoint TripPointRef       IN,        ///< Trip point reference
-    uint32    threshold          OUT        ///< The threshold associated with the input
+    int32    threshold          OUT        ///< The threshold associated with the input
                                             ///< trip point reference
 ) = 21;
 
@@ -836,7 +836,7 @@ FUNCTION le_result_t GetTripPointThreshold
 FUNCTION le_result_t GetTripPointHysterisis
 (
     TripPoint TripPointRef        IN,       ///< Trip point reference
-    uint32    hysterisis          OUT       ///< The hysteresis associated with the input
+    int32    hysterisis          OUT       ///< The hysteresis associated with the input
                                             /// trip point reference
 ) = 22;
 
@@ -945,7 +945,7 @@ FUNCTION le_result_t GetBoundTripPointType
 FUNCTION le_result_t GetBoundTripPointThreshold
 (
     TripPoint TripPointRef       IN,       ///< Trip point reference
-    uint32    boundThreshold     OUT       ///< The threshold associated with the input bound
+    int32    boundThreshold     OUT       ///< The threshold associated with the input bound
                                            ///< cooling device's trip point object
 ) = 28;
 
@@ -963,7 +963,7 @@ FUNCTION le_result_t GetBoundTripPointThreshold
 FUNCTION le_result_t GetBoundTripPointHysterisis
 (
     TripPoint TripPointRef        IN,      ///< Trip point reference
-    uint32    boundHysterisis     OUT      ///< The hysteresis associated with the input bound cooling device's trip point object.
+    int32    boundHysterisis     OUT      ///< The hysteresis associated with the input bound cooling device's trip point object.
                                            ///< cooling device's trip point object
 ) = 29;
 
