@@ -213,7 +213,7 @@
  * Use @ref taf_sim_IsEmergencyCallSubscriptionSelected() to know if the EMERGENCY profile is activated for
  * the specified sim slot.
  *
- * @b WARNING: If no profile is active, it returns LE_NOT_FOUND.
+ * @b WARNING: If no emergency profile is found, it returns LE_FAULT.
  *
  * Before the SIM sends a message, an application registers a callback handler using taf_sim_AddNewStateHandler().
  * Once the message is sent, the handler will be called indicating the sending status of the message.
@@ -257,12 +257,12 @@
  * subscription being controlled by the user's application.
  *
  * The taf_sim_LocalSwapToEmergencyCallSubscription() function requests the multi-profile eUICC to
- * swap to ECS and reboot. The user's application must wait for eUICC reboot to finish and
- * a network connection to be available.
+ * swap to ECS. The user's application must wait for eUICC reboot to finish and a network connection
+ * to be available.
  *
  * The taf_sim_LocalSwapToCommercialSubscription() function requests the multi-profile eUICC to swap
- * back to a commercial subscription and reboot. The user's application must wait for eUICC reboot
- * to finish and a network connection to be available.
+ * back to a commercial subscription. The user's application must wait for eUICC reboot to finish 
+ * and a network connection to be available.
  *
  * Unsupported APIs:
  *   -- taf_sim_SetAutomaticSelection()
