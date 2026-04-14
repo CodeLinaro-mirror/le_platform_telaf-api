@@ -50,12 +50,11 @@
  * - taf_diagDidStore_Write() -- Writes the data record to given DID.
  *
  * An application must call taf_diagDidStore_AddDataIdChangeHandler() first to register a handler
- * for a DataID to get change notifications. To receive notifications for additional DataIDs, an
- * application should call taf_diagDidStore_GetDIDHandlerRef() to retrieve the handler reference.
- * It can then use taf_diagDidStore_AddDIDToHandler() or taf_diagDidStore_RemoveDIDFromHandler()
- * by passing the handler reference with the desired DataID. If a change occurs in any registered
- * DataID, the service triggers the same handler and provides the updated value for the
- * corresponding DataID.
+ * for a DataID to get the change notification. To receive notifications for additional DataID, an
+ * application should call taf_diagDidStore_AddDIDToHandler() and
+ * taf_diagDidStore_RemoveDIDFromHandler() to add/remove the DataID by passing the service
+ * reference along with the desired DataID. If a change occurs in any of registered DataID,
+ * the service triggers the handler and provides the updated value for the corresponding DataID.
  *
  * @code
    // Rx DataID change handler function.
@@ -77,14 +76,9 @@
             (taf_diagDidStore_DataIdChangeHandlerFunc_t)DataIdChangeHandler, NULL);
    LE_ERROR_IF((handlerRef == NULL), "taf_diagDidStore_AddDataIdChangeHandler returns NULL!");
 
-   // Get the handler reference.
-   taf_diagDidStore_DIDChangeHandlerRef_t didHandlerRef;
-   didHandlerRef = taf_diagDidStore_GetDIDHandlerRef(svcRef);
-   LE_ASSERT(didHandlerRef != NULL);
-
    // Add the DataID to get the change notification.
    uint16_t dataId = 0xF011;
-   le_result_t result = taf_diagDidStore_AddDIDToHandler(didHandlerRef, dataId);
+   le_result_t result = taf_diagDidStore_AddDIDToHandler(svcRef, dataId);
    if (result != LE_OK || result != LE_DUPLICATE){
     LE_ERROR("Fail to add DataID");
     return result;
@@ -92,7 +86,7 @@
 
    // Remove the DataID.
    uint16_t dataId = 0xF011;
-   le_result_t result = taf_diagDidStore_RemoveDIDFromHandler(didHandlerRef, dataId);
+   le_result_t result = taf_diagDidStore_RemoveDIDFromHandler(svcRef, dataId);
    if (result != LE_OK || result != LE_NOT_FOUND){
     LE_ERROR("Fail to remove DataID");
     return result;
@@ -123,13 +117,6 @@ DEFINE MAX_DID_DATA_RECORD_SIZE = 4092;
  */
 //-------------------------------------------------------------------------------------------------
 REFERENCE Service;
-
-//-------------------------------------------------------------------------------------------------
-/**
- * Reference to the Data ID change handler.
- */
-//-------------------------------------------------------------------------------------------------
-REFERENCE DIDChangeHandler;
 
 //-------------------------------------------------------------------------------------------------
 /**
@@ -224,39 +211,22 @@ EVENT DataIdChange
 
 //-------------------------------------------------------------------------------------------------
 /**
- * Gets the reference of a Data ID change handler.
- *
- * @instaging
- *
- * @return
- *     - Reference to the DID change handler.
- *     - NULL if errors.
- *
- */
-//-------------------------------------------------------------------------------------------------
-FUNCTION DIDChangeHandler GetDIDHandlerRef
-(
-    Service svcRef IN   ///< Service reference.
-) = 5;
-
-//-------------------------------------------------------------------------------------------------
-/**
- * Adds the Data ID to the specified handler for change notifications.
+ * Adds the DID to handler for change notification.
  *
  * @instaging
  *
  * @return
  *     - LE_OK -- Succeeded.
- *     - LE_BAD_PARAMETER -- Invalid handlerRef.
+ *     - LE_BAD_PARAMETER -- Invalid svcRef.
  *     - LE_DUPLICATE -- Data identifier already added.
  *
  */
 //-------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddDIDToHandler
 (
-    DIDChangeHandler handlerRef IN, ///< Handler reference.
-    uint16 dataId  IN               ///< Data identifier.
-) = 6;
+    Service svcRef IN,    ///< Service reference.
+    uint16 dataId  IN     ///< Data identifier.
+) = 5;
 
 //-------------------------------------------------------------------------------------------------
 /**
@@ -266,13 +236,13 @@ FUNCTION le_result_t AddDIDToHandler
  *
  * @return
  *     - LE_OK -- Succeeded.
- *     - LE_BAD_PARAMETER -- Invalid handlerRef.
+ *     - LE_BAD_PARAMETER -- Invalid svcRef.
  *     - LE_NOT_FOUND -- Data identifier not found.
  *
  */
 //-------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemoveDIDFromHandler
 (
-    DIDChangeHandler handlerRef IN, ///< Handler reference.
-    uint16 dataId  IN               ///< Data identifier.
-) = 7;
+    Service svcRef IN,    ///< Service reference.
+    uint16 dataId  IN     ///< Data identifier.
+) = 6;
