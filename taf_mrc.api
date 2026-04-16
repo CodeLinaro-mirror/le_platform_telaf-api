@@ -11,18 +11,14 @@
  *
  * <HR>
  *
- * The memory robustness criteria (MRC) service APIs are designed for operations on an MRC daemon
- * (MRCD).
- * The MRC service is mainly applied in over-the-air firmware updates and mirrored systems. The MRCD
- * runs in the the background to support EFS2 backup and restore, system mirroring, flash scrubbing,
- * suspending for eCall, and FOTA flash access arbitration. MRCD processes them by priority, and the
- * MRC service APIs notify MRCD of FOTA events.
+ * The MRC (Memory Robustness Criteria) service provides APIs to communicate with the MRC daemon
+ * (MRCD). MRCD runs in the background to support EFS2 backup/restore, system mirroring, flash
+ * scrubbing, eCall suspend, and flash access arbitration.
  *
  * @section taf_mrc_binding IPC interfaces binding
  *
  * The functions of this API are provided by the @b tafMRCSvc service.
  *
- * The following example illustrates how to bind to the MRC service.
  * @verbatim
  *
    bindings:
@@ -32,32 +28,214 @@
  *
    @endverbatim
  *
- * @section c_taf_mrc_ota FOTA supplementary operations
+ * @section c_taf_mrc_ota OTA operations
  *
- * - taf_mrc_SendOtaStartMsg() - Sends an OTA start notification to MRCD before FOTA starts.
+ * Use these APIs to notify MRCD about OTA lifecycle events and A/B synchronization.
  *
- * - taf_mrc_SendOtaResumeMsg() - Sends an OTA resume notification to MRCD when FOTA resumes.
- *
- * - taf_mrc_SendOtaEndMsg() - Sends an OTA end notification to MRCD when FOTA completes.
- *
- * - taf_mrc_SendOtaAbsyncMsg() - Synchronizes active and inactive slots.
- *
- * The following example illustrates FOTA operations with MRCD.
+ * - taf_mrc_SendOtaStartMsg() -- Notifies MRCD that OTA is starting.
+ * - taf_mrc_SendOtaResumeMsg() -- Notifies MRCD that a paused OTA is resuming.
+ * - taf_mrc_SendOtaEndMsg() -- Notifies MRCD that OTA has finished.
+ * - taf_mrc_SendOtaAbsyncMsg() -- Requests MRCD to perform A/B synchronization.
+ * - taf_mrc_SendSyncStatusMsg() -- Reports A/B synchronization progress to MRCD.
  *
  * @code
  *
-   // When FOTA starts.
-   LE_ASSERT(taf_mrc_SendOtaStartMsg() == LE_OK);
+   le_result_t res;
 
-   // Perform FOTA with recovery client or flash acesss.
+   // When OTA is about to start.
+   res = taf_mrc_SendOtaStartMsg();
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_SendOtaStartMsg failed: %d", res);
+       return;
+   }
 
-   // When FOTA completes.
-   LE_ASSERT(taf_mrc_SendOtaEndMsg(TAF_MRC_OTA_OP_STATUS_SUCCESS) == LE_OK);
+   // Perform OTA with recovery client or flash access.
 
-   // Swicth to active slot.
+   // When OTA is ended.
+   res = taf_mrc_SendOtaEndMsg(TAF_MRC_OTA_OP_STATUS_SUCCESS);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_SendOtaEndMsg failed: %d", res);
+       return;
+   }
 
-   // Slot synchronization.
-   LE_ASSERT(taf_mrc_SendOtaStartMsg() == LE_OK);
+   // A/B synchronization.
+   res = taf_mrc_SendOtaAbsyncMsg();
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_SendOtaAbsyncMsg failed: %d", res);
+       return;
+   }
+
+   // Notify synchronization state changes.
+   res = taf_mrc_SendSyncStatusMsg(TAF_MRC_SYNC_STATUS_INIT);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_SendSyncStatusMsg(init) failed: %d", res);
+       return;
+   }
+
+   res = taf_mrc_SendSyncStatusMsg(TAF_MRC_SYNC_STATUS_SUCCESS);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_SendSyncStatusMsg(success) failed: %d", res);
+       return;
+   }
+
+ *
+   @endcode
+ *
+ * @section c_taf_mrc_efs EFS metrics operations
+ *
+ * Use these APIs to measure EFS flash health metrics. Call taf_mrc_MeasureEfsMetrics() to get a
+ * metrics reference, use the getter APIs to read individual values, then call
+ * taf_mrc_DeleteEfsMetrics() to release the reference.
+ *
+ * - taf_mrc_MeasureEfsMetrics() -- Collects EFS metrics and return a reference.
+ * - taf_mrc_DeleteEfsMetrics() -- Releases a metrics reference.
+ * - taf_mrc_GetEfsMaxPECount() -- Gets the maximum Program/Erase count.
+ * - taf_mrc_GetEfsMinPECount() -- Gets the minimum Program/Erase count.
+ * - taf_mrc_GetEfsAvgPECount() -- Gets the average Program/Erase count.
+ * - taf_mrc_GetEfsPEStandardDeviation() -- Gets the standard deviation of Program/Erase counts.
+ * - taf_mrc_GetEfsBadBlocks() -- Gets the bad block count.
+ * - taf_mrc_SetEfsBackupPeriod() -- Sets the EFS backup timer period (in seconds).
+ *
+ * @code
+ *
+   taf_mrc_MetricsRef_t metricsRef = NULL;
+   uint32_t count = 0;
+   uint32_t sd = 0;
+   le_result_t res;
+
+   // Measure EFS metrics.
+   res = taf_mrc_MeasureEfsMetrics(&metricsRef);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_MeasureEfsMetrics failed: %d", res);
+       return;
+   }
+
+   // Get the maximum program and erase count in EFS.
+   res = taf_mrc_GetEfsMaxPECount(metricsRef, &count);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_GetEfsMaxPECount failed: %d", res);
+       goto cleanup;
+   }
+   LE_INFO("Max PE count: %u", count);
+
+   // Get the minimum program and erase count in EFS.
+   res = taf_mrc_GetEfsMinPECount(metricsRef, &count);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_GetEfsMinPECount failed: %d", res);
+       goto cleanup;
+   }
+   LE_INFO("Min PE count: %u", count);
+
+   // Get the average program and erase count in EFS.
+   res = taf_mrc_GetEfsAvgPECount(metricsRef, &count);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_GetEfsAvgPECount failed: %d", res);
+       goto cleanup;
+   }
+   LE_INFO("Avg PE count: %u", count);
+
+   // Get the standard deviation of program and erase count in EFS.
+   res = taf_mrc_GetEfsPEStandardDeviation(metricsRef, &sd);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_GetEfsPEStandardDeviation failed: %d", res);
+       goto cleanup;
+   }
+   LE_INFO("Standard deviation: %u", sd);
+
+   // Get the bad block count in EFS.
+   res = taf_mrc_GetEfsBadBlocks(metricsRef, &count);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_GetEfsBadBlocks failed: %d", res);
+       goto cleanup;
+   }
+   LE_INFO("Bad block count: %u", count);
+
+   // Set the period of EFS backup.
+   res = taf_mrc_SetEfsBackupPeriod(3600);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_SetEfsBackupPeriod failed: %d", res);
+   }
+
+cleanup:
+   if (metricsRef != NULL)
+   {
+       res = taf_mrc_DeleteEfsMetrics(metricsRef);
+       if (res != LE_OK)
+       {
+           LE_ERROR("taf_mrc_DeleteEfsMetrics failed: %d", res);
+       }
+   }
+ *
+   @endcode
+ *
+ * @section c_taf_mrc_toggle Toggle notification operations
+ *
+ * MRCD can request a bank toggle asynchronously. The clients subscribe to the ToggleBank
+ * operation request event, handle the request in the callback, then acknowledge the result
+ * with taf_mrc_SetGpioToggleStatus().
+ *
+ * - taf_mrc_AddToggleBankHandler() -- Subscribes to bank toggle request or status from MRCD.
+ * - taf_mrc_SetGpioToggleStatus() -- Acknowledges the GPIO toggle result to MRCD.
+ *
+ * @code
+ *
+   static void MyToggleBankHandler
+   (
+       taf_mrc_ToggleStatus_t status,
+       taf_mrc_Bank_t bank,
+       taf_mrc_Error_t error,
+       void* contextPtr
+   )
+   {
+       le_result_t res;
+
+       LE_UNUSED(bank);
+       LE_UNUSED(error);
+       LE_UNUSED(contextPtr);
+
+       if (status != TAF_MRC_TOGGLE_STATUS_REQUESTED)
+       {
+           return;
+       }
+
+       // Perform board-specific bank toggle handling here.
+
+       res = taf_mrc_SetGpioToggleStatus(TAF_MRC_TOGGLE_STATUS_SUCCEEDED);
+       if (res != LE_OK)
+       {
+           LE_ERROR("taf_mrc_SetGpioToggleStatus failed: %d", res);
+       }
+   }
+
+   static taf_mrc_ToggleBankHandlerRef_t handlerRef = NULL;
+   le_result_t res;
+
+   handlerRef = taf_mrc_AddToggleBankHandler(MyToggleBankHandler, NULL);
+   if (handlerRef == NULL)
+   {
+       LE_ERROR("taf_mrc_AddToggleBankHandler failed");
+       return;
+   }
+
+   // Later, when a toggle request is no longer expected, acknowledge failures explicitly.
+   res = taf_mrc_SetGpioToggleStatus(TAF_MRC_TOGGLE_STATUS_FAILED);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_SetGpioToggleStatus(failed) returned %d", res);
+   }
+
  *
    @endcode
  *
@@ -71,45 +249,82 @@ SERVING_VERSION = 1;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * OTA operation status enum.
+ * OTA status enum.
  *
  * @b NOTE: OTA status notified to MRCD.
  */
 //--------------------------------------------------------------------------------------------------
 ENUM OtaOperationStatus
 {
-    OTA_OP_STATUS_SUCCESS = 1, ///< OTA operation status is success.
-    OTA_OP_STATUS_FAILURE      ///< OTA operation status is failure.
+    OTA_OP_STATUS_SUCCESS = 1, ///< OTA status is success.
+    OTA_OP_STATUS_FAILURE      ///< OTA status is failure.
 };
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Sync status enum.
+ * Synchronization status enum.
  *
  * @b NOTE: Sync status notified to MRCD.
  */
 //--------------------------------------------------------------------------------------------------
 ENUM SyncStatus
 {
-    SYNC_STATUS_INIT = 0,    ///< Sync is initialized by client.
-    SYNC_STATUS_SUCCESS,     ///< Sync status is success.
-    SYNC_STATUS_FAILURE      ///< Sync status is failure.
+    SYNC_STATUS_INIT = 0,    ///< Synchronization is initialized by client.
+    SYNC_STATUS_SUCCESS,     ///< Synchronization status is success.
+    SYNC_STATUS_FAILURE      ///< Synchronization status is failure.
 };
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The EFS metrics reference.
+ * Toggle status enum.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM ToggleStatus
+{
+    TOGGLE_STATUS_UNKNOWN = -1, ///< Toggle status unknown.
+    TOGGLE_STATUS_REQUESTED,    ///< Request to perform toggle.
+    TOGGLE_STATUS_SUCCEEDED,    ///< Toggle succeeded.
+    TOGGLE_STATUS_FAILED        ///< Toggle failed.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Bank enum.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM Bank
+{
+    BANK_UNKNOWN = -1, ///< Unknown bank.
+    BANK_A,            ///< Bank A.
+    BANK_B             ///< Bank B.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Error enum.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM Error
+{
+    ERROR_UNKNOWN = -1, ///< Unknown error.
+    ERROR_NONE          ///< No errors.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The metrics reference.
  */
 //--------------------------------------------------------------------------------------------------
 REFERENCE Metrics;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Sends an OTA start message to MRCD.
+ * Sends a message to the MRCD to indicate that OTA is about to start.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_OK -- Request accepted.
+ *  - LE_FAULT -- Request failed.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SendOtaStartMsg
@@ -118,11 +333,12 @@ FUNCTION le_result_t SendOtaStartMsg
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Sends an OTA resume message to MRCD.
+ * Sends a message to the MRCD to indicate that OTA is about to resume.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_OK -- Request accepted.
+ *  - LE_FAULT -- Request failed.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SendOtaResumeMsg
@@ -131,25 +347,28 @@ FUNCTION le_result_t SendOtaResumeMsg
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Sends an OTA end message to MRCD.
+ * Sends a message to the MRCD to indicate that OTA is ended.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_OK -- Request accepted.
+ *  - LE_FAULT -- Request failed.
+ *  - LE_BAD_PARAMETER -- Invalid otaStatus value.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SendOtaEndMsg
 (
-    OtaOperationStatus otaStatus IN ///< OTA operation status.
+    OtaOperationStatus otaStatus IN ///< OTA status.
 ) = 2;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Sends a message to MRCD to synchronize active and inactive slots.
+ * Sends a message to the MRCD to perform AB synchronization.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_OK -- Request accepted.
+ *  - LE_FAULT -- Request failed.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SendOtaAbsyncMsg
@@ -158,23 +377,31 @@ FUNCTION le_result_t SendOtaAbsyncMsg
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Sends sync staus to MRCD.
+ * Sends a message to the MRCD to indicate that AB synchronization is about to start or AB
+ * synchronization is ended.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_OK -- Request accepted.
+ *  - LE_FAULT -- Request failed.
+ *  - LE_BAD_PARAMETER -- Invalid status value.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SendSyncStatusMsg
 (
-    SyncStatus status IN ///< Sync status.
+    SyncStatus status IN ///< AB synchronization status.
 ) = 4;
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Measures the EFS metrics.
+ * Measures the EFS metrics.
  *
  * @return
+ *  - LE_OK -- Metrics collected successfully.
+ *  - LE_FAULT -- Failed to collect metrics.
+ *  - LE_BAD_PARAMETER -- MetricsRef is null or invalid parameter.
+ *  - LE_TIMEOUT -- Operation timed out.
+ *  - LE_UNSUPPORTED -- Not supported.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
@@ -185,10 +412,12 @@ FUNCTION le_result_t MeasureEfsMetrics
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Deletes the EFS metrics.
+ * Deletes the EFS metrics.
  *
  * @return
- *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteEfsMetrics
@@ -198,10 +427,12 @@ FUNCTION le_result_t DeleteEfsMetrics
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Gets the maximum Program/Erase(PE) count in EFS.
+ * Gets the maximum Program/Erase(PE) count in EFS.
  *
  * @return
- *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetEfsMaxPECount
@@ -212,10 +443,12 @@ FUNCTION le_result_t GetEfsMaxPECount
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Gets the minimum Program/Erase(PE) count in EFS.
+ * Gets the minimum Program/Erase(PE) count in EFS.
  *
  * @return
- *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetEfsMinPECount
@@ -226,10 +459,12 @@ FUNCTION le_result_t GetEfsMinPECount
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Gets the average program and erase count in EFS.
+ * Gets the average program and erase count in EFS.
  *
  * @return
- *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetEfsAvgPECount
@@ -240,10 +475,12 @@ FUNCTION le_result_t GetEfsAvgPECount
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Gets the standard deviation of Program/Erase(PE) count in EFS.
+ * Gets the standard deviation of Program/Erase(PE) count in EFS.
  *
  * @return
- *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetEfsPEStandardDeviation
@@ -254,10 +491,12 @@ FUNCTION le_result_t GetEfsPEStandardDeviation
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Gets the bad block count in EFS.
+ * Gets the bad block count in EFS.
  *
  * @return
- *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetEfsBadBlocks
@@ -268,16 +507,67 @@ FUNCTION le_result_t GetEfsBadBlocks
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Sets the period of EFS backup.
+ * Sets the period of EFS backup.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_OK -- Period set successfully.
+ *  - LE_FAULT -- Request failed.
+ *  - LE_BAD_PARAMETER -- Invalid parameter.
+ *  - LE_TIMEOUT -- Operation timed out.
+ *  - LE_UNSUPPORTED -- Not supported.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetEfsBackupPeriod
 (
     uint32 period IN       ///< Period in second.
 ) = 12;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets the GPIO toggle status.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Status acknowledged successfully.
+ *  - LE_FAULT -- Request failed.
+ *  - LE_BAD_PARAMETER -- Invalid status value.
+ *  - LE_TIMEOUT -- Operation timed out.
+ *  - LE_UNSUPPORTED -- Not supported.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetGpioToggleStatus
+(
+    ToggleStatus status IN ///< The GPIO toggle status.
+) = 13;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Handler for toggling bank.
+ *
+ * @instaging
+ *
+ * @param[in] status     Toggle status.
+ * @param[in] bank       The target bank for the toggle request.
+ * @param[in] error      Error code associated with the toggle request.
+ * @param[in] contextPtr Context pointer.
+ */
+//--------------------------------------------------------------------------------------------------
+HANDLER ToggleBankHandler
+(
+    ToggleStatus status IN, ///< Toggle status.
+    Bank bank IN,           ///< The target bank for toggling.
+    Error error IN          ///< Error code for toggling bank.
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Event to report toggle bank.
+ */
+//--------------------------------------------------------------------------------------------------
+EVENT ToggleBank
+(
+    ToggleBankHandler handler ///< Handler for toggling bank.
+) = (14,15);
