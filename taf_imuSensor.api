@@ -133,17 +133,19 @@
  *
  * @verbatim
 
-    void TestSensorOnEventFunc(taf_imuSensor_SensorRef_t sensorRef,taf_imuSensor_SampleRef_t ref,
-        void* contextPtr){
-        taf_imuSensor_DataValue_t rawData[TAF_SENSOR_MAX_SUPPORTED_BATCH_COUNT];
-        taf_imuSensor_DataValue_t biasData[TAF_SENSOR_MAX_SUPPORTED_BATCH_COUNT];
-        size_t  size = sizeof(rawData)/sizeof(taf_imuSensor_EventData_t);
-        le_result_t result = taf_imuSensor_GetRotatedData(ref,rawData,&size,biasData,&size);
-        result = taf_imuSensor_DeleteData(ref);
+    void TestSensorOnEventFunc(taf_imuSensor_SampleRef_t sampleRef,
+        const taf_imuSensor_DataValue_t* rawData,  size_t rawDataCount,
+        const taf_imuSensor_DataValue_t* biasData, size_t biasDataCount,
+        void* contextPtr)
+    {
+        // Use the data and then free server-side sample ref
+        result = taf_imuSensor_DeleteData(sampleRef);
     }
-
+    taf_imuSensor_SensorListRef_t listRef = taf_imuSensor_GetSensorList();
+    taf_imuSensor_SensorRef_t sensorRef = taf_imuSensor_GetFirstSensor(listRef);
     taf_sensor_DataHandlerRef_t eventHandlerRef;
-    eventHandlerRef = taf_imuSensor_AddDatatHandler(sensorRef,TestSensorOnEventFunc, NULL);
+    eventHandlerRef = taf_imuSensor_AddDataHandler(config->sensorRef,
+                                                         TestSensorOnEventFunc, sensorRef);
     taf_imuSensor_RemoveDataHandler(eventHandlerRef);
    @endverbatim
  *
@@ -570,15 +572,17 @@ FUNCTION le_result_t SelfTest
  *
  * @instaging
  *
- * @param[in] sensorRef  Sensor reference.
  * @param[in] sampleRef  Reference for sensor sample.
+ * @param[in] RawData    The data of the events.
+ * @param[in] BiasData   The data of the events.
  * @param[in] contextPtr Context pointer.
  */
 //------------------------------------------------------------------------------------------------
 HANDLER DataHandler
 (
-    Sensor sensorRef                                   IN,   ///< Sensor reference.
-    Sample sampleRef                                   IN   ///< Reference for sensor sample.
+    Sample      sampleRef                              IN, ///< Reference for sensor sample.
+    DataValue   RawData[MAX_SUPPORTED_BATCH_COUNT]     IN, ///< The data of the events.
+    DataValue   BiasData[MAX_SUPPORTED_BATCH_COUNT]    IN  ///< The data of the events.
 );
 
 //------------------------------------------------------------------------------------------------
