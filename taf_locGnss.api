@@ -1211,6 +1211,29 @@
    taf_locGnss_RemoveDgnssStatusChangeHandler(DgnssStatusHandlerRef);
    @endverbatim
  *
+ * - taf_locGnss_InjectMerkleTreeInformationByPath() -- Injects the Merkle Tree information via an XML configuration file.
+ *
+ * The XML file configuration contains the Merkle root, Merkle nodes and information for up to two public keys.
+ *
+ * @verbatim
+   string filePath = "/etc/OSNMA_MerkleTree.xml";
+   if(taf_locGnss_InjectMerkleTreeInformationByPath(filePath) == LE_OK)
+   {
+     // Process after successfully injecting the Merkle data.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_ConfigureOsnma() -- Enables or disables the OSNMA feature in the modem.
+ *
+ * This API shall not be called when GNSS state is ACTIVE.
+ *
+ * @verbatim
+   bool osnma = true;
+   if(taf_locGnss_ConfigureOsnma(osnma) == LE_OK)
+   {
+     // Process after successfully enabling or disabling the OSNMA feature.
+   }
+   @endverbatim
  *
  * @subsection taf_locGnss_GetLeapSeconds Get leap seconds event information
  *
@@ -1257,6 +1280,8 @@
 
 API_VERSION = 1;
 SERVING_VERSION = 1;
+
+API_MSG_SIZE = 8256;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1359,6 +1384,13 @@ DEFINE URL_PATH_MAX = 128;
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE NUMBER_OF_SIGNAL_TYPES_MAX = 23;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Defines the maximum number of characters for the Merkle Tree file path.
+ */
+//--------------------------------------------------------------------------------------------------
+DEFINE MERKLETREE_FILE_PATH_LEN_MAX = 256;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -4658,3 +4690,41 @@ EVENT DgnssStatusChange
 (
     DgnssStatusChangeHandler handler
 ) = (103,104);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Injects the Merkle Tree information via an XML configuration file.
+ * The XML file configuration contains the Merkle root, Merkle nodes and information for up to two public keys.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_FAULT         Failed to inject the Merkle Tree information.
+ *  - LE_NOT_PERMITTED The Location service is not in the ready state.
+ *  - LE_BAD_PARAMETER Invalid parameter provided.
+ *  - LE_OK            Succeeded.
+ *
+*/
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t InjectMerkleTreeInformationByPath
+(
+    string merkleTreeFilePath[MERKLETREE_FILE_PATH_LEN_MAX] IN  ///< File path.
+) = 105;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enables or disables the OSNMA feature in the modem.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_FAULT         Failed to enable/disable the OSNMA feature.
+ *  - LE_NOT_PERMITTED The Location service is not in the ready state.
+ *  - LE_OK            Succeeded.
+ *
+*/
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t ConfigureOsnma
+(
+    bool galOsnma  IN     ///< Enable or disable Galileo OSNMA.
+) = 106;
