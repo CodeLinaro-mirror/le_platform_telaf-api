@@ -1461,6 +1461,7 @@ STRUCT SvInfo
 {
     Constellation satConst;    ///< The constellation type in which this satellite vehicle belongs.
     bool satUsed;              ///< The flag to indicate whether the satellite is used in computing the fix.
+    bool satUsedDgnss;         ///< The flag to indicate whether the satellite is used in DGNSS correction.
     bool satTracked;           ///< The flag to indicate whether the satellite is used to track the vehicle. If it's tracked, the satSnr will hold valid value.
     uint8 satSnr;              ///< The signal-to-noise ratio of the signal measured at antenna of the satellite vehicle. Units: dB-Hz
     uint8 satElev;             ///< The satellite vehicle elevation angle. Units: Degrees. Range: 0 to 90.
@@ -3873,6 +3874,8 @@ FUNCTION le_result_t GetSVIds
  * Gets the satellite's vehicle information of a given constellation
  * per client session.
  *
+ * @instaging
+ *
  * @return
  *  - LE_OK             Succeeded.
  *  - LE_FAULT          Failed.
@@ -3880,6 +3883,9 @@ FUNCTION le_result_t GetSVIds
  *  - LE_OUT_OF_RANGE   The retrieved parameter is invalid.
  *  - LE_NO_MEMORY      The array length of svInfo is zero.
  *  - LE_OVERFLOW       The array length of svInfo is less than available SV of a constellation.
+ *
+ * @b NOTE: For DGNSS station IDs of type SBAS, taf_locGnss_GetSatellitesInfoEx() can be used.
+ *          Valid SBAS station ID ranges are 120–158 and 183–191.
  *
  * @b NOTE: If the caller passes an invalid position sample reference to this function,
  *       it is a fatal error and the client will be killed.
