@@ -185,6 +185,42 @@
  * In this case, the vsomeip application(ID=0x0202) "commonapiClientApp" is a commonAPI client
  * application requested on unicast address 192.168.226.1.
  *
+ * @section c_taf_someipClnt_reserved_ids Reserved service IDs and application IDs
+ *
+ * The following vsomeip service IDs are reserved:
+ *
+ * @rst
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * | Service ID range   | Port range  | Total | Usage                                      |
+ * +====================+=============+=======+============================================+
+ * | 0xED00-0xED7F      | 40000-40127 | 128   | TelAF RPC services                         |
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * | 0xED80-0xEDFF      | 41000-41127 | 128   | TelAF IVSS services                        |
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * | 0xEE00-0xEE3F      | 42000-42063 | 64    | IVSS Location/Sensor services              |
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * @endrst
+ *
+ * The following vsomeip application instance IDs are reserved:
+ *
+ * @rst
+ * +------------------------+-------+-----------------------------------------------+
+ * | App instance ID range  | Total | Usage                                         |
+ * +========================+=======+===============================================+
+ * | 0x0101-0x0108          | 8     | TelAF SOME/IP GW service                      |
+ * +------------------------+-------+-----------------------------------------------+
+ * | 0x0201-0x0208          | 8     | TelAF IVSS services                           |
+ * +------------------------+-------+-----------------------------------------------+
+ * | 0x0301-0x0308          | 8     | IVSS Location services                        |
+ * +------------------------+-------+-----------------------------------------------+
+ * | 0x030A-0x030D          | 4     | IVSS Sensor services                          |
+ * +------------------------+-------+-----------------------------------------------+
+ * @endrst
+ *
+ * @b NOTE: In additional JSON files for multiple networks/VLANs, the application name must be
+ *       tafSomeipGWSvc_1 to tafSomeipGWSvc_7, and the values of "name", "routing", and "network"
+ *       must match the file name.
+ *
  * @section c_taf_someipClnt_client_API Client-service APIs
  *
  * Before setting up a client-service-instance, application shall first get the service reference by

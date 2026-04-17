@@ -202,6 +202,42 @@
  *          offered by the commonAPI application. Do not call any taf_someipSvr() APIs to offer that service
  *          again in a TelAF application, otherwise it will cause unexpected result.
  *
+ * @section c_taf_someipSvr_reserved_ids Reserved service IDs and application IDs
+ *
+ * The following vsomeip service IDs are reserved:
+ *
+ * @rst
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * | Service ID range   | Port range  | Total | Usage                                      |
+ * +====================+=============+=======+============================================+
+ * | 0xED00-0xED7F      | 40000-40127 | 128   | TelAF RPC services                         |
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * | 0xED80-0xEDFF      | 41000-41127 | 128   | TelAF IVSS services                        |
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * | 0xEE00-0xEE3F      | 42000-42063 | 64    | IVSS Location/Sensor services              |
+ * +--------------------+-------------+-------+--------------------------------------------+
+ * @endrst
+ *
+ * The following vsomeip application instance IDs are reserved:
+ *
+ * @rst
+ * +------------------------+-------+-----------------------------------------------+
+ * | App instance ID range  | Total | Usage                                         |
+ * +========================+=======+===============================================+
+ * | 0x0101-0x0108          | 8     | TelAF SOME/IP GW service                      |
+ * +------------------------+-------+-----------------------------------------------+
+ * | 0x0201-0x0208          | 8     | TelAF IVSS services                           |
+ * +------------------------+-------+-----------------------------------------------+
+ * | 0x0301-0x0308          | 8     | IVSS Location services                        |
+ * +------------------------+-------+-----------------------------------------------+
+ * | 0x030A-0x030D          | 4     | IVSS Sensor services                          |
+ * +------------------------+-------+-----------------------------------------------+
+ * @endrst
+ *
+ * @b NOTE: In additional JSON files for multiple networks/VLANs, the application name must be
+ *       tafSomeipGWSvc_1 to tafSomeipGWSvc_7, and the values of "name", "routing", and "network"
+ *       must match the file name.
+ *
  * @section c_taf_someipSvr_server_API Server-service APIs
  *
  * Before setting up a server-service-instance, application shall first get the service reference by
