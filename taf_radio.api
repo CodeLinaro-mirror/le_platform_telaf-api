@@ -602,6 +602,407 @@
    } else {
        LE_ERROR("Failed to get the configuration of VoNR.");
    }
+
+ *
+ * @section c_taf_radio_net_reg_state Network registration state
+ *
+ * Users can get the circuit-switched (CS) network registration state and subscribe to changes.
+ *
+ *  - taf_radio_GetNetRegState() -- Gets the CS network registration state (home, roaming, denied,
+ *    searching, etc.).
+ *
+ *  - taf_radio_AddNetRegStateEventHandler() / taf_radio_RemoveNetRegStateEventHandler() --
+ *    Adds/removes handler for CS network registration state changes.
+ *
+ * @code
+ *
+   taf_radio_NetRegState_t state;
+   le_result_t res = taf_radio_GetNetRegState(&state, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get net reg state: %d", res);
+   else
+       LE_INFO("Current net reg state: %d", state);
+
+   static void NetRegStateHandler(const taf_radio_NetRegStateInd_t* indPtr, void* contextPtr)
+   {
+       LE_INFO("Net reg state changed: %d on phone %d", indPtr->state, indPtr->phoneId);
+   }
+   taf_radio_NetRegStateEventHandlerRef_t handlerRef =
+       taf_radio_AddNetRegStateEventHandler(
+           (taf_radio_NetRegStateHandlerFunc_t)NetRegStateHandler, NULL);
+   // ... later:
+   taf_radio_RemoveNetRegStateEventHandler(handlerRef);
+ *
+   @endcode
+ *
+ * @section c_taf_radio_operating_mode Operating mode
+ *
+ * Users can set and get the device operating mode (online, airplane, offline, etc.) and subscribe
+ * to operating mode changes.
+ *
+ *  - taf_radio_SetOperatingMode() -- Sets the operating mode (e.g., online, airplane).
+ *
+ *  - taf_radio_GetOperatingMode() -- Gets the current operating mode.
+ *
+ *  - taf_radio_AddOpModeChangeHandler() / taf_radio_RemoveOpModeChangeHandler() --
+ *    Adds/removes handler for operating mode changes.
+ *
+ * @code
+ *
+   le_result_t res = taf_radio_SetOperatingMode(TAF_RADIO_OP_MODE_AIRPLANE, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to set airplane mode: %d", res);
+
+   taf_radio_OpMode_t mode;
+   res = taf_radio_GetOperatingMode(&mode, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get operating mode: %d", res);
+   else
+       LE_INFO("Current operating mode: %d", mode);
+
+   res = taf_radio_SetOperatingMode(TAF_RADIO_OP_MODE_ONLINE, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to restore online mode: %d", res);
+ *
+   @endcode
+ *
+ * @section c_taf_radio_nr5g_cell NR5G serving cell information
+ *
+ * Users can get NR5G-specific serving cell information.
+ *
+ *  - taf_radio_GetServingNrCellId() -- Gets the 64-bit NR cell identity (use instead of
+ *    taf_radio_GetServingCellId() for NR5G).
+ *
+ *  - taf_radio_GetServingCellNrTracAreaCode() -- Gets the NR tracking area code.
+ *
+ *  - taf_radio_GetServingCellNrArfcn() -- Gets the NR absolute radio frequency channel number.
+ *
+ *  - taf_radio_GetPhysicalServingNrCellId() -- Gets the NR physical cell identity.
+ *
+ * @code
+ *
+   uint64_t nrCellId = taf_radio_GetServingNrCellId(phoneId);
+   if (nrCellId == UINT64_MAX)
+       LE_ERROR("Failed to get NR cell ID.");
+   else
+       LE_INFO("NR cell ID: %" PRIu64, nrCellId);
+
+   int32_t nrTac = taf_radio_GetServingCellNrTracAreaCode(phoneId);
+   if (nrTac == INT32_MAX)
+       LE_ERROR("Failed to get NR TAC.");
+
+   int32_t nrArfcn = taf_radio_GetServingCellNrArfcn(phoneId);
+   if (nrArfcn == INT32_MAX)
+       LE_ERROR("Failed to get NR ARFCN.");
+
+   uint32_t nrPcid = taf_radio_GetPhysicalServingNrCellId(phoneId);
+   if (nrPcid == UINT32_MAX)
+       LE_ERROR("Failed to get NR physical cell ID.");
+ *
+   @endcode
+ *
+ * @section c_taf_radio_channel_info Serving cell channel and routing area information
+ *
+ * Users can get GSM/UMTS channel numbers, routing area code, and the full network name.
+ *
+ *  - taf_radio_GetServingCellArfcn() -- Gets the GSM absolute radio frequency channel number.
+ *    @b WARNING: Only applicable for GSM.
+ *
+ *  - taf_radio_GetServingCellUarfcn() -- Gets the UMTS/TDSCDMA UTRA absolute radio frequency
+ *    channel number. @b WARNING: Only applicable for UMTS/TDSCDMA.
+ *
+ *  - taf_radio_GetServingCellRoutingAreaCode() -- Gets the routing area code.
+ *    @b WARNING: Only applicable for GSM/WCDMA/TDSCDMA.
+ *
+ *  - taf_radio_GetCurrentNetworkLongName() -- Gets the current network full (long) name.
+ *
+ * @code
+ *
+   int32_t arfcn;
+   le_result_t res = taf_radio_GetServingCellArfcn(&arfcn, phoneId);
+   if (res == LE_OK)
+       LE_INFO("GSM ARFCN: %d", arfcn);
+   else if (res == LE_NOT_FOUND)
+       LE_INFO("Not a GSM cell.");
+   else
+       LE_ERROR("Failed to get ARFCN: %d", res);
+
+   uint8_t rac;
+   res = taf_radio_GetServingCellRoutingAreaCode(&rac, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get RAC: %d", res);
+   else
+       LE_INFO("Routing area code: %u", rac);
+
+   char longName[TAF_RADIO_NETWORK_NAME_MAX_LEN + 1];
+   res = taf_radio_GetCurrentNetworkLongName(longName, sizeof(longName), phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get long network name: %d", res);
+   else
+       LE_INFO("Network long name: %s", longName);
+ *
+   @endcode
+ *
+ * @section c_taf_radio_pci_scan PCI network scan
+ *
+ * Users can perform a network scan with Physical Cell Identity (PCI) to discover nearby cells.
+ * Each PCI scan entry contains a physical cell ID, global cell ID, and a list of PLMN IDs.
+ *
+ *  - taf_radio_PerformPciNetworkScan() / taf_radio_DeletePciNetworkScan() -- Performs/deletes a
+ *    PCI network scan.
+ *
+ *  - taf_radio_PerformPciNetworkScanAsync() -- Asynchronously performs a PCI network scan.
+ *
+ *  - taf_radio_GetFirstPciScanInfo() / taf_radio_GetNextPciScanInfo() -- Iterates PCI scan entries.
+ *
+ *  - taf_radio_GetFirstPlmnInfo() / taf_radio_GetNextPlmnInfo() -- Iterates PLMN IDs within a
+ *    PCI scan entry.
+ *
+ *  - taf_radio_GetPciScanCellId() -- Gets the physical cell ID of a PCI scan entry.
+ *
+ *  - taf_radio_GetPciScanGlobalCellId() -- Gets the global cell ID of a PCI scan entry.
+ *
+ *  - taf_radio_GetPciScanMccMnc() -- Gets the MCC and MNC of a PLMN in a PCI scan entry.
+ *
+ * @code
+ *
+   taf_radio_PciScanInformationListRef_t listRef =
+       taf_radio_PerformPciNetworkScan(TAF_RADIO_RAT_BIT_MASK_LTE, phoneId);
+   if (listRef == NULL)
+   {
+       LE_ERROR("PCI scan failed.");
+   }
+   else
+   {
+       taf_radio_PciScanInformationRef_t cellRef = taf_radio_GetFirstPciScanInfo(listRef);
+       while (cellRef != NULL)
+       {
+           uint16_t pcid = taf_radio_GetPciScanCellId(cellRef);
+           uint32_t gcid = taf_radio_GetPciScanGlobalCellId(cellRef);
+           LE_INFO("PCI: %u, Global CID: %u", pcid, gcid);
+           taf_radio_PlmnInformationRef_t plmnRef = taf_radio_GetFirstPlmnInfo(cellRef);
+           while (plmnRef != NULL)
+           {
+               char mcc[TAF_RADIO_MCC_BYTES], mnc[TAF_RADIO_MNC_BYTES];
+               if (taf_radio_GetPciScanMccMnc(plmnRef, mcc, sizeof(mcc),
+                   mnc, sizeof(mnc)) == LE_OK)
+                   LE_INFO("  PLMN: %s-%s", mcc, mnc);
+               plmnRef = taf_radio_GetNextPlmnInfo(cellRef);
+           }
+           cellRef = taf_radio_GetNextPciScanInfo(listRef);
+       }
+       taf_radio_DeletePciNetworkScan(listRef);
+   }
+ *
+   @endcode
+ *
+ * @section c_taf_radio_neighbor_cells Neighbor cells information
+ *
+ * Users can get information about neighboring cells and subscribe to cell info changes.
+ *
+ *  - taf_radio_GetNeighborCellsInfo() / taf_radio_DeleteNeighborCellsInfo() -- Creates/deletes
+ *    a neighbor cells information reference.
+ *
+ *  - taf_radio_GetFirstNeighborCellInfo() / taf_radio_GetNextNeighborCellInfo() -- Iterates
+ *    neighbor cell entries.
+ *
+ *  - taf_radio_GetNeighborCellId() -- Gets the neighbor cell identity (64-bit).
+ *
+ *  - taf_radio_GetNeighborCellLocAreaCode() -- Gets the neighbor cell location area code.
+ *
+ *  - taf_radio_GetNeighborCellRxLevel() -- Gets the neighbor cell signal strength in dBm.
+ *
+ *  - taf_radio_GetNeighborCellRat() -- Gets the neighbor cell RAT.
+ *
+ *  - taf_radio_GetPhysicalNeighborLteCellId() -- Gets the neighbor LTE physical cell ID.
+ *
+ *  - taf_radio_GetPhysicalNeighborNrCellId() -- Gets the neighbor NR5G physical cell ID.
+ *
+ *  - taf_radio_GetNeighborCellGsmBsic() -- Gets the neighbor GSM base station identity code.
+ *
+ *  - taf_radio_AddCellInfoChangeHandler() / taf_radio_RemoveCellInfoChangeHandler() --
+ *    Adds/removes handler for cell information changes (serving/neighbor).
+ *
+ * @code
+ *
+   taf_radio_NeighborCellsRef_t ngbrRef = taf_radio_GetNeighborCellsInfo(phoneId);
+   if (ngbrRef == NULL)
+   {
+       LE_ERROR("Failed to get neighbor cells info.");
+   }
+   else
+   {
+       taf_radio_CellInfoRef_t cellRef = taf_radio_GetFirstNeighborCellInfo(ngbrRef);
+       while (cellRef != NULL)
+       {
+           taf_radio_Rat_t rat = taf_radio_GetNeighborCellRat(cellRef);
+           uint64_t cellId = taf_radio_GetNeighborCellId(cellRef);
+           int32_t rxLevel = taf_radio_GetNeighborCellRxLevel(cellRef);
+           LE_INFO("Neighbor: RAT=%d, ID=%" PRIu64 ", RxLevel=%d dBm",
+               rat, cellId, rxLevel);
+           cellRef = taf_radio_GetNextNeighborCellInfo(ngbrRef);
+       }
+       taf_radio_DeleteNeighborCellsInfo(ngbrRef);
+   }
+ *
+   @endcode
+ *
+ * @section c_taf_radio_net_status Network status
+ *
+ * Users can get detailed network status including RAT service status and LTE CS capability.
+ * The network status reference is a per-phone cached object.
+ *
+ *  - taf_radio_GetNetStatus() -- Gets the network status reference for a given phone.
+ *
+ *  - taf_radio_GetRatSvcStatus() -- Gets the RAT service status (no service, limited, service,
+ *    limited regional, power save).
+ *
+ *  - taf_radio_GetLteCsCap() -- Gets the LTE CS capability (full service, CSFB not preferred,
+ *    SMS only, limited, barred).
+ *
+ *  - taf_radio_AddNetStatusChangeHandler() / taf_radio_RemoveNetStatusChangeHandler() --
+ *    Adds/removes handler for network status changes (RAT service status, service domain,
+ *    LTE CS capability).
+ *
+ * @code
+ *
+   taf_radio_NetStatusRef_t netRef = taf_radio_GetNetStatus(phoneId);
+   if (netRef == NULL)
+   {
+       LE_ERROR("Failed to get network status reference.");
+   }
+   else
+   {
+       taf_radio_RatSvcStatus_t svcStatus;
+       le_result_t res = taf_radio_GetRatSvcStatus(netRef, &svcStatus);
+       if (res != LE_OK)
+           LE_ERROR("Failed to get RAT service status: %d", res);
+       else
+           LE_INFO("RAT service status: %d", svcStatus);
+
+       taf_radio_CsCap_t csCap;
+       res = taf_radio_GetLteCsCap(netRef, &csCap);
+       if (res != LE_OK)
+           LE_ERROR("Failed to get LTE CS capability: %d", res);
+       else
+           LE_INFO("LTE CS capability: %d", csCap);
+   }
+ *
+   @endcode
+ *
+ * @section c_taf_radio_nr_dual_connectivity NR dual connectivity status
+ *
+ * Users can get the EN-DC (E-UTRA NR Dual Connectivity) availability and DCNR restriction status.
+ *
+ *  - taf_radio_GetNrDualConnectivityStatus() -- Gets the ENDC availability and DCNR restriction.
+ *
+ * @code
+ *
+   taf_radio_NREndcAvailability_t endcAvail;
+   taf_radio_NRDcnrRestriction_t dcnrRestrict;
+   le_result_t res = taf_radio_GetNrDualConnectivityStatus(&endcAvail, &dcnrRestrict, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get NR dual connectivity status: %d", res);
+   else
+   {
+       LE_INFO("ENDC availability: %d", endcAvail);
+       LE_INFO("DCNR restriction: %d", dcnrRestrict);
+   }
+ *
+   @endcode
+ *
+ * @section c_taf_radio_carrier_aggregation Carrier Aggregation (CA) information
+ *
+ * Users can get LTE Carrier Aggregation status and subscribe to CA information changes.
+ *
+ *  - taf_radio_GetCAInformation() / taf_radio_DeleteCAInformation() -- Creates/deletes a CA
+ *    information reference. Currently only LTE (TAF_RADIO_RAT_LTE) is supported.
+ *
+ *  - taf_radio_GetLteCAStatus() -- Gets the CA status (activated/deactivated) and the number of
+ *    active component carriers.
+ *
+ *  - taf_radio_AddCAInfoHandler() / taf_radio_RemoveCAInfoHandler() -- Adds/removes handler for
+ *    CA information changes. Currently only LTE is supported.
+ *
+ * @code
+ *
+   taf_radio_CAInfoRef_t caRef;
+   le_result_t res = taf_radio_GetCAInformation(phoneId, TAF_RADIO_RAT_LTE, &caRef);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get CA information: %d", res);
+   else
+   {
+       taf_radio_CAStatus_t status;
+       uint32_t activeCCNum;
+       res = taf_radio_GetLteCAStatus(caRef, &status, &activeCCNum);
+       if (res != LE_OK)
+           LE_ERROR("Failed to get LTE CA status: %d", res);
+       else
+           LE_INFO("CA status: %d, active CCs: %u", status, activeCCNum);
+       taf_radio_DeleteCAInformation(caRef);
+   }
+ *
+   @endcode
+ *
+ * @section c_taf_radio_connection_status Connection status (ENDC)
+ *
+ * Users can get and monitor the ENDC connection status (LTE+NR5G NSA availability).
+ *
+ *  - taf_radio_GetConnStatus() / taf_radio_DeleteConnStatus() -- Creates/deletes a connection
+ *    status reference.
+ *
+ *  - taf_radio_GetEndcConnectionStatus() -- Gets the ENDC connection status from the reference.
+ *
+ *  - taf_radio_AddConnectionStatusHandler() / taf_radio_RemoveConnectionStatusHandler() --
+ *    Adds/removes handler for connection status changes.
+ *
+ * @code
+ *
+   taf_radio_ConnStatusRef_t connRef;
+   le_result_t res = taf_radio_GetConnStatus(phoneId, &connRef);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get connection status: %d", res);
+   else
+   {
+       taf_radio_NREndcAvailability_t endcStatus;
+       res = taf_radio_GetEndcConnectionStatus(connRef, &endcStatus);
+       if (res != LE_OK)
+           LE_ERROR("Failed to get ENDC connection status: %d", res);
+       else
+           LE_INFO("ENDC connection status: %d", endcStatus);
+       taf_radio_DeleteConnStatus(connRef);
+   }
+ *
+   @endcode
+ *
+ * @section c_taf_radio_nr_icon NR icon type
+ *
+ * Users can get and monitor the NR icon type (5G basic or ultrawide band).
+ *
+ *  - taf_radio_GetNrIconType() -- Gets the NR icon type for the current serving cell.
+ *
+ *  - taf_radio_AddNrIconTypeHandler() / taf_radio_RemoveNrIconTypeHandler() -- Adds/removes
+ *    handler for NR icon type changes.
+ *
+ * @code
+ *
+   taf_radio_NrIconType_t iconType;
+   le_result_t res = taf_radio_GetNrIconType(&iconType, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get NR icon type: %d", res);
+   else
+       LE_INFO("NR icon type: %d", iconType);
+
+   static void NrIconTypeHandler(taf_radio_NrIconType_t type, uint8_t phoneId, void* contextPtr)
+   {
+       LE_INFO("NR icon type changed: %d on phone %d", type, phoneId);
+   }
+   taf_radio_NrIconTypeHandlerRef_t handlerRef =
+       taf_radio_AddNrIconTypeHandler(
+           (taf_radio_NrIconTypeHandlerFunc_t)NrIconTypeHandler, NULL);
+   // ... later:
+   taf_radio_RemoveNrIconTypeHandler(handlerRef);
+ *
    @endcode
  * <HR>
  *
@@ -609,6 +1010,7 @@
 //--------------------------------------------------------------------------------------------------
 
 API_VERSION = 1;
+
 SERVING_VERSION = 1;
 
 //--------------------------------------------------------------------------------------------------
@@ -1658,9 +2060,11 @@ EVENT ConnectionStatus
  * Sets the radio power state.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetRadioPower
@@ -1674,9 +2078,11 @@ FUNCTION le_result_t SetRadioPower
  *  Gets the radio power state.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRadioPower
@@ -1690,10 +2096,11 @@ FUNCTION le_result_t GetRadioPower
  *  Registers to network using automatic mode.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetAutomaticRegisterMode
@@ -1706,10 +2113,12 @@ FUNCTION le_result_t SetAutomaticRegisterMode
  *  Registers to network using manual mode.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (null pointer or invalid MCC/MNC string).
+ *  - LE_OUT_OF_RANGE -- MCC or MNC value out of range [0, 999].
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetManualRegisterMode
@@ -1737,10 +2146,12 @@ FUNCTION SetManualRegisterModeAsync
  *  Gets the network registration mode.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_OUT_OF_RANGE -- Buffer size too small.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRegisterMode
@@ -1768,9 +2179,11 @@ FUNCTION int32 GetPlatformSpecificRegistrationErrorCode
  * Gets 2G/3G band capabilities.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetBandCapabilities
@@ -1784,9 +2197,11 @@ FUNCTION le_result_t GetBandCapabilities
  * Gets LTE band capabilities.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteBandCapabilities
@@ -1800,9 +2215,11 @@ FUNCTION le_result_t GetLteBandCapabilities
  * Sets 2G/3G band preferences.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetBandPreferences
@@ -1816,9 +2233,11 @@ FUNCTION le_result_t SetBandPreferences
  * Gets 2G/3G band preferences.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetBandPreferences
@@ -1832,9 +2251,11 @@ FUNCTION le_result_t GetBandPreferences
  * Sets LTE band preferences.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetLteBandPreferences
@@ -1848,9 +2269,11 @@ FUNCTION le_result_t SetLteBandPreferences
  * Gets LTE band preferences.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteBandPreferences
@@ -1864,11 +2287,12 @@ FUNCTION le_result_t GetLteBandPreferences
  *  Adds a preferred operator.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_DUPLICATE -- Duplicate preferred operator.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (null pointer or invalid MCC/MNC string).
+ *  - LE_OUT_OF_RANGE -- MCC or MNC value out of range [0, 999].
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddPreferredOperator
@@ -1884,11 +2308,13 @@ FUNCTION le_result_t AddPreferredOperator
  *  Removes a preferred operator.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (null pointer or invalid MCC/MNC string).
+ *  - LE_OUT_OF_RANGE -- MCC or MNC value out of range [0, 999].
  *  - LE_NOT_FOUND -- Preferred operator not found.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemovePreferredOperator
@@ -1962,9 +2388,10 @@ FUNCTION PreferredOperator GetNextPreferredOperator
  *  Gets the details of the given preferred operator.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_NOT_FOUND -- Preferred operator not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_OUT_OF_RANGE -- Buffer size too small.
+ *  - LE_NOT_FOUND -- Preferred operator not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetPreferredOperatorDetails
@@ -1980,10 +2407,11 @@ FUNCTION le_result_t GetPreferredOperatorDetails
  *  Gets the RAT in use.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRadioAccessTechInUse
@@ -1997,9 +2425,11 @@ FUNCTION le_result_t GetRadioAccessTechInUse
  *  Sets the RAT preferences.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetRatPreferences
@@ -2013,10 +2443,11 @@ FUNCTION le_result_t SetRatPreferences
  *  Gets the RAT preferences.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRatPreferences
@@ -2030,10 +2461,11 @@ FUNCTION le_result_t GetRatPreferences
  *  Gets the network registration state.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNetRegState
@@ -2047,10 +2479,11 @@ FUNCTION le_result_t GetNetRegState
  *  Gets the packet switch state.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetPacketSwitchedState
@@ -2064,9 +2497,11 @@ FUNCTION le_result_t GetPacketSwitchedState
  *  Gets the registration domain for the current serving RAT.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServiceDomain
@@ -2080,10 +2515,11 @@ FUNCTION le_result_t GetServiceDomain
  *  Sets the service domain preferences.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetServiceDomainPreferences
@@ -2097,10 +2533,11 @@ FUNCTION le_result_t SetServiceDomainPreferences
  *  Gets the service domain preferences.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServiceDomainPreferences
@@ -2115,8 +2552,10 @@ FUNCTION le_result_t GetServiceDomainPreferences
  *
  * @return
  *  - LE_OK -- Succeeded.
- *  - LE_BAD_PARAMETER -- Bad parameters
+ *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -2134,8 +2573,10 @@ FUNCTION le_result_t SetSignalStrengthIndThresholds
  *
  * @return
  *  - LE_OK -- Succeeded.
- *  - LE_BAD_PARAMETER -- Bad parameters
+ *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -2151,10 +2592,11 @@ FUNCTION le_result_t SetSignalStrengthIndDelta
  *  Gets the signal quality.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response timed out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetSignalQual
@@ -2449,10 +2891,12 @@ FUNCTION uint32 GetPhysicalServingNrCellId
  *  Gets the GSM base station identity code.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Not a GSM serving cell.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellGsmBsic
@@ -2482,10 +2926,11 @@ FUNCTION uint16 GetServingCellScramblingCode
  *  Gets the current network's short name.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_TIMEOUT -- Time out.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCurrentNetworkName
@@ -2499,9 +2944,14 @@ FUNCTION le_result_t GetCurrentNetworkName
  *  Gets the current MCC and MNC.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_OUT_OF_RANGE -- Buffer size too small.
+ *  - LE_NOT_FOUND -- Serving cell not found.
+ *  - LE_UNSUPPORTED -- Unsupported RAT.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCurrentNetworkMccMnc
@@ -2814,8 +3264,9 @@ FUNCTION uint32 GetPciScanGlobalCellId
  *  Gets PLMN network MCC and MNC of PCI network scan information.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- PLMN information reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetPciScanMccMnc
@@ -2959,9 +3410,10 @@ FUNCTION uint32 GetPhysicalNeighborNrCellId
  * Gets Base Station Identity Code of neighbor GSM cell.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Neighbor cells reference not found.
- *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Not a GSM cell.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNeighborCellGsmBsic
@@ -2989,10 +3441,12 @@ FUNCTION NetStatus GetNetStatus
  * Gets the RAT service status.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Network status reference not found.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRatSvcStatus
@@ -3006,10 +3460,12 @@ FUNCTION le_result_t GetRatSvcStatus
  * Gets the CS capabilitiy of LTE network.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Network status reference not found.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCsCap
@@ -3037,10 +3493,11 @@ FUNCTION Ims GetIms
  * Gets the IMS registration status.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsRegStatus
@@ -3054,10 +3511,13 @@ FUNCTION le_result_t GetImsRegStatus
  * Gets the IMS service status.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- IMS reference not found.
+ *  - LE_UNSUPPORTED -- Unsupported IMS service type.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsSvcStatus
@@ -3072,10 +3532,12 @@ FUNCTION le_result_t GetImsSvcStatus
  * Gets the PDP error code.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- IMS reference not found.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsPdpError
@@ -3089,10 +3551,11 @@ FUNCTION le_result_t GetImsPdpError
  * Sets the IMS service enablement configuration parameters.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_NOT_FOUND -- IMS reference not found.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetImsSvcCfg
@@ -3107,10 +3570,12 @@ FUNCTION le_result_t SetImsSvcCfg
  * Gets the IMS service enablement configuration parameters.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- IMS reference not found.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsSvcCfg
@@ -3125,10 +3590,12 @@ FUNCTION le_result_t GetImsSvcCfg
  * Sets the user agent.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- IMS reference not found.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetImsUserAgent
@@ -3142,10 +3609,12 @@ FUNCTION le_result_t SetImsUserAgent
  * Gets the user agent.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- IMS reference not found.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsUserAgent
@@ -3158,9 +3627,10 @@ FUNCTION le_result_t GetImsUserAgent
  *  Gets the DCNR and ENDC mode status.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNrDualConnectivityStatus
@@ -3174,10 +3644,11 @@ FUNCTION le_result_t GetNrDualConnectivityStatus
  *  Gets the long name of the network.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_TIMEOUT -- Time out.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCurrentNetworkLongName
@@ -3191,10 +3662,11 @@ FUNCTION le_result_t GetCurrentNetworkLongName
  *  Gets the details of the total SIM count and maximum active SIM count.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetHardwareSimConfig
@@ -3208,10 +3680,11 @@ FUNCTION le_result_t GetHardwareSimConfig
  *  Gets the RAT capabilities supported by hardware and SIM based on a given phone ID.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *  - LE_TIMEOUT -- Time out.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetHardwareSimRatCapabilities
@@ -3228,8 +3701,7 @@ FUNCTION le_result_t GetHardwareSimRatCapabilities
  *
  * @return
  *  - LE_OK -- Succeeded.
- *  - LE_BAD_PARAMETER -- Bad parameters
- *  - LE_FAULT -- Failed.
+ *  - LE_BAD_PARAMETER -- Bad parameters (invalid phone ID).
  */
 
 //--------------------------------------------------------------------------------------------------
@@ -3247,8 +3719,7 @@ FUNCTION le_result_t SetSignalStrengthIndHysteresis
  *
  * @return
  *  - LE_OK -- Succeeded.
- *  - LE_BAD_PARAMETER -- Bad parameters
- *  - LE_FAULT -- Failed.
+ *  - LE_BAD_PARAMETER -- Bad parameters (invalid phone ID).
  */
 
 //--------------------------------------------------------------------------------------------------
@@ -3263,9 +3734,12 @@ FUNCTION le_result_t SetSignalStrengthIndHysteresisTimer
  *  Gets the serving cell absolute radio frequency channel number.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Not a GSM serving cell.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  *
  * @b NOTE: Only applicable for GSM.
  */
@@ -3281,11 +3755,15 @@ FUNCTION le_result_t GetServingCellArfcn
  *  Gets the serving cell UTRA absolute radio frequency channel number.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Serving cell not found.
+ *  - LE_UNSUPPORTED -- Not a UMTS/TDSCDMA serving cell.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  *
- * @b NOTE: Only applicable for UMTS.
+ * @b NOTE: Only applicable for UMTS/TDSCDMA.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellUarfcn
@@ -3299,9 +3777,11 @@ FUNCTION le_result_t GetServingCellUarfcn
  * Sets the operating mode.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetOperatingMode
@@ -3315,9 +3795,11 @@ FUNCTION le_result_t SetOperatingMode
  *  Gets the operating mode.
  *
  * @return
+ *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetOperatingMode
@@ -3331,10 +3813,11 @@ FUNCTION le_result_t GetOperatingMode
  *  Gets routing area code.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  *
  * @note Only applicable for GSM/WCDMA/TDSCDMA.
  */
@@ -3350,10 +3833,11 @@ FUNCTION le_result_t GetServingCellRoutingAreaCode
  *  Gets 2G/3G band information.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  *
  * @b NOTE: Only applicable for GSM/WCDMA/TDSCDMA.
  */
@@ -3370,10 +3854,11 @@ FUNCTION le_result_t GetServingCellBandInfo
  *  Gets LTE band information.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellLteBandInfo
@@ -3388,10 +3873,11 @@ FUNCTION le_result_t GetServingCellLteBandInfo
  *  Gets NR band information.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellNrBandInfo
@@ -3406,10 +3892,11 @@ FUNCTION le_result_t GetServingCellNrBandInfo
  *  Gets NR icon type.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_TIMEOUT -- Response time out.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNrIconType
@@ -3423,9 +3910,12 @@ FUNCTION le_result_t GetNrIconType
  * Gets the reference of Carrier Aggregation(CA) information.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_UNSUPPORTED -- Unsupported RAT (only LTE is supported).
+ *  - LE_FAULT -- Failed.
+ *  - LE_TIMEOUT -- Timeout.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCAInformation
@@ -3440,8 +3930,9 @@ FUNCTION le_result_t GetCAInformation
  * Deletes the reference of Carrier Aggregation(CA) information.
  *
  * @return
- *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (null reference).
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteCAInformation
@@ -3454,8 +3945,9 @@ FUNCTION le_result_t DeleteCAInformation
  * Gets the Carrier Aggregation(CA) status and active CC count of LTE.
  *
  * @return
- *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (null pointer).
+ *  - LE_NOT_FOUND -- Reference not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCAStatus
@@ -3470,9 +3962,10 @@ FUNCTION le_result_t GetLteCAStatus
  * Gets the reference of connection status.
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed to get data available system status.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetConnStatus
@@ -3486,8 +3979,8 @@ FUNCTION le_result_t GetConnStatus
  * Deletes the reference of connection status.
  *
  * @return
- *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (null reference or reference not found in map).
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteConnStatus
@@ -3500,8 +3993,8 @@ FUNCTION le_result_t DeleteConnStatus
  *  Gets the E-UTRA New Radio Dual Connectivity(ENDC) connection status.
  *
  * @return
- *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (reference not found in map).
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetEndcConnectionStatus
