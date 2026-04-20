@@ -1561,7 +1561,7 @@ FUNCTION le_result_t PlayDtmf
  *
  * @return
  *     - LE_OK                 Success.
- *     - LE_BAD_PARAMETER      Invalid stream reference.
+ *     - LE_BAD_PARAMETER      Invalid stream reference or no active dtmf tone.
  *     - LE_FAULT              Failure.
  */
 FUNCTION le_result_t StopDtmf
@@ -1574,7 +1574,7 @@ FUNCTION le_result_t StopDtmf
  *
  * @return
  *     - LE_OK                 Success.
- *     - LE_BAD_PARAMETER      Invalid slotId.
+ *     - LE_BAD_PARAMETER      Invalid slotId or no active dtmf signalling.
  *     - LE_FAULT              Failure.
  *     - LE_UNSUPPORTED        No active RF call
  */
