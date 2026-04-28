@@ -40,31 +40,43 @@
  *
  * <HR>
  *
- * The Firmware Update service APIs are part of the Update service and support over-the-air (OTA)
- * firmware update solutions.
+ * The Firmware Update service provides APIs for OTA firmware updates.
  *
  * @section taf_fwupdate_binding IPC interfaces binding
  *
  * The functions of this API are provided by the @b tafUpdateSvc service.
  *
- * The following example illustrates how to bind to the Firmware Update service:
  * @verbatim
- *
    bindings:
    {
        clientExe.clientComponent.taf_fwupdate -> tafUpdateSvc.taf_fwupdate
    }
- *
    @endverbatim
  *
  * @section c_taf_update_fota_function FOTA functions
  *
- * - taf_fwupdate_RebootToActive() -- Reboots the target device to the active slot if firmware
- *   is installed successfully.
+ * - taf_fwupdate_RebootToActive() -- Reboot to the active slot after activation.
+ * - taf_fwupdate_GetFirmwareVersion() -- Get the current firmware version string.
+ * - taf_fwupdate_Install() -- Start local firmware installation.
  *
- * - taf_fwupdate_GetFirmwareVersion() -- Gets the firmware version.
- *
- * - taf_fwupdate_Install() -- Supports firmware installation.
+ * @code
+   char version[TAF_FWUPDATE_MAX_VERS_LEN] = {0};
+   le_result_t res = taf_fwupdate_GetFirmwareVersion(version);
+   if (res != LE_OK)
+   {
+       LE_ERROR("Failed to get firmware version: %d", res);
+       return;
+   }
+   LE_INFO("Firmware version: %s", version);
+
+   res = taf_fwupdate_Install();
+   if (res != LE_OK)
+   {
+       LE_ERROR("Failed to start firmware install: %d", res);
+       return;
+   }
+   // Wait for update state indications from taf_update.
+   @endcode
  *
  * <HR>
  *
@@ -76,14 +88,14 @@ SERVING_VERSION = 1;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum firmware version length with null characters.
+ * Maximum firmware version string length including null terminator.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE MAX_VERS_LEN = 256;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Reboots the target device to an active slot.
+ * Reboots the device to the active slot.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION RebootToActive
@@ -92,26 +104,28 @@ FUNCTION RebootToActive
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Gets the firmware version.
+ * Gets the current firmware version string.
  *
  * @return
- *  - LE_BAD_PAREMETER -- Bad parameter(s).
- *  - LE_OK -- Succeeded.
+ *  - LE_OK -- Success.
+ *  - LE_BAD_PARAMETER -- version is null.
+ *  - LE_FAULT -- Failed to obtain or parse the firmware version.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetFirmwareVersion
 (
-    string version[MAX_VERS_LEN] OUT ///< Firmware version.
+    string version[MAX_VERS_LEN] OUT ///< Firmware version string.
 ) = 1;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Installs firmware.
+ * Starts local firmware installation.
+ *
+ * @b NOTE: For local firmware update only. Final result is reported asynchronously via update
+ *          state indications.
  *
  * @return
- *  - LE_OK -- Succeeded.
- *
- * @b NOTE: Only used for local firmware update.
+ *  - LE_OK -- Install request queued successfully.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t Install

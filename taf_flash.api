@@ -40,87 +40,53 @@
  *
  * <HR>
  *
- * The Flash Access service APIs are applied in Firmware-Over-the-Air (FOTA) to flash MTD partitions
- * or UBI volumes.
+ * The Flash Access service provides APIs for reading and writing MTD partitions and UBI volumes
+ * during FOTA operations.
  *
  * @section taf_flash_binding IPC interfaces binding
  *
  * All the functions of this API are provided by the @b tafUpdateSvc service.
  *
- * The following sample illustrates how to bind to Flash Access service.
  * @verbatim
- *
    bindings:
    {
        clientExe.clientComponent.taf_flash -> tafUpdateSvc.taf_flash
    }
- *
    @endverbatim
  *
  * @section c_taf_flash_Init Flash access initialization
  *
- * - taf_flash_Init() -- Initiates flash access reference map and memory pool.
+ * Call taf_flash_Init() once before any other flash operation.
  *
  * @section c_taf_flash_Mtd MTD partition flash access
  *
- * - taf_flash_MtdOpen() -- Opens MTD partition for read or write.
- *
- * - taf_flash_MtdClose() -- Closes MTD partition.
- *
- * - taf_flash_MtdInformation() -- Gets MTD partition information.
- *
- * - taf_flash_MtdIsBlockGood() -- Checks if an MTD block is good.
- *
- * - taf_flash_MtdEraseBlock() -- Erases an MTD block.
- *
- * - taf_flash_MtdReadPage() -- Reads data from an MTD page.
- *
- * - taf_flash_MtdWritePage() -- Writes the date to an MTD page.
- *
- * The following example illustrates reading an MTD block.
+ * - taf_flash_MtdOpen() / taf_flash_MtdClose() -- Opens/Closes an MTD partition.
+ * - taf_flash_MtdInformation() -- Gets partition geometry and bad block count.
+ * - taf_flash_MtdIsBlockGood() -- Checks if a block is usable.
+ * - taf_flash_MtdEraseBlock() / taf_flash_MtdErase() -- Erases a block or the whole partition.
+ * - taf_flash_MtdReadPage() / taf_flash_MtdRead() -- Reads a page or byte range.
+ * - taf_flash_MtdWritePage() / taf_flash_MtdWrite() -- Writes a page or byte range.
  *
  * @code
- *
-   // Open MTD partition.
    taf_flash_MtdOpen(partitionName, TAF_FLASH_READ_WRITE, &partitionRef);
-
-   // Read MTD block.
    taf_flash_MtdReadBlock(partitionRef, blockIndex, data, &dataSize);
-
-   // Close MTD partition.
    taf_flash_MtdClose(partitionRef);
- *
    @endcode
  *
  * @section c_taf_flash_Ubi UBI volume flash access
  *
- * - taf_flash_UbiOpen() -- Opens UBI volume for read or write.
- *
- * - taf_flash_UbiClose() -- Closes UBI volume.
- *
- * - taf_flash_UbiInformation() -- Gets UBI volume information
- *
- * - taf_flash_UbiRead() -- Reads data from UBI volume.
- *
- * - taf_flash_UbiInitWrite() -- Initiates write size of UBI volume.
- *
- * - taf_flash_UbiWrite() -- Writes data to UBI volume.
- *
- * The following example illustrates writing UBI volume.
+ * - taf_flash_UbiOpen() / taf_flash_UbiClose() -- Opens/Closes a UBI volume.
+ * - taf_flash_UbiInformation() -- Gets volume size and free block count.
+ * - taf_flash_UbiRead() -- Reads data from a byte offset.
+ * - taf_flash_UbiInitWrite() -- Declares total write size before writing.
+ * - taf_flash_UbiWrite() -- Appends data to the volume.
+ * - taf_flash_UbiErase() -- Erases the volume.
  *
  * @code
- *
-   // Open UBI volume.
    taf_flash_UbiOpen(volumeName, TAF_FLASH_READ_WRITE, &volumeRef);
-
-   // Write UBI volume.
    taf_flash_UbiInitWrite(volumeRef, volumeSize);
-
    taf_flash_UbiWrite(volumeRef, data, dataSize);
-
-   // Close UBI volume.
    taf_flash_UbiClose(volumeRef);
- *
    @endcode
  *
  * <HR>
@@ -135,103 +101,99 @@ SERVING_VERSION = 1;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum partition name length with null character(s).
+ * Maximum partition name length including null terminator.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE PARTITION_NAME_MAX_BYTES = 128;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum byte size for buffer to write data to an MTD page.
+ * Maximum buffer size for writing to an MTD page.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE MTD_PAGE_MAX_WRITE_SIZE = 4 * 1024;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum byte size for buffer to read data from an MTD page.
+ * Maximum buffer size for reading from an MTD page.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE MTD_PAGE_MAX_READ_SIZE = 4 * 1024;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum byte size for buffer to read data from MTD partition.
+ * Maximum buffer size for reading from an MTD partition.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE MTD_MAX_READ_SIZE = 16 * 1024;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum byte size for buffer to write data to MTD partition.
+ * Maximum buffer size for writing to an MTD partition.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE MTD_MAX_WRITE_SIZE = 16 * 1024;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum volume name length with null character(s).
+ * Maximum volume name length including null terminator.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE VOLUME_NAME_MAX_BYTES = 64;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum volume type length with null character(s).
+ * Maximum volume type length including null terminator.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE VOLUME_TYPE_MAX_BYTES = 128;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum byte size for buffer to read data from UBI volume.
+ * Maximum buffer size for reading from a UBI volume.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE UBI_MAX_READ_SIZE = 16 * 1024;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum byte size for buffer to write data to UBI volume.
+ * Maximum buffer size for writing to a UBI volume.
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE UBI_MAX_WRITE_SIZE = 16 * 1024;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The reference of a partition.
+ * MTD partition reference.
  */
 //--------------------------------------------------------------------------------------------------
 REFERENCE Partition;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The reference of a volume.
+ * UBI volume reference.
  */
 //--------------------------------------------------------------------------------------------------
 REFERENCE Volume;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Open mode enum.
+ * Open mode.
  */
 //--------------------------------------------------------------------------------------------------
 ENUM OpenMode
 {
-    READ_ONLY = 1, ///< Read-Only mode.
-    WRITE_ONLY,    ///< Write-Only mode.
-    READ_WRITE     ///< Read and Write mode.
+    READ_ONLY = 1, ///< Read-only.
+    WRITE_ONLY,    ///< Write-only.
+    READ_WRITE     ///< Read and write.
 };
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Initiates flash access reference map and memory pool.
- *
- * @b NOTE: This function should be called once before calling other flash access APIs.
+ * Initializes flash access. Call once before any other flash API.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Initialization request issued.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION Init
@@ -240,19 +202,19 @@ FUNCTION Init
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Opens an MTD partition for read and write.
+ * Opens an MTD partition.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Partition opened successfully.
+ *  - LE_BAD_PARAMETER -- Invalid partition name or output pointer.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdOpen
 (
     string partitionName[PARTITION_NAME_MAX_BYTES] IN, ///< MTD partition name.
-    OpenMode mode IN,                                  ///< Opening mode.
-    Partition partitionRef OUT                         ///< The MTD partition reference.
+    OpenMode mode IN,                                  ///< Open mode.
+    Partition partitionRef OUT                         ///< MTD partition reference.
 ) = 1;
 
 //--------------------------------------------------------------------------------------------------
@@ -260,33 +222,35 @@ FUNCTION le_result_t MtdOpen
  * Closes an MTD partition.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Partition closed successfully.
+ *  - LE_BAD_PARAMETER -- partitionRef is null.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdClose
 (
-    Partition partitionRef IN ///< The MTD partition reference.
+    Partition partitionRef IN ///< MTD partition reference.
 ) = 2;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Gets an information about the given MTD partition.
+ * Gets MTD partition geometry and bad block count.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Information returned successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference or output pointer.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdInformation
 (
-    Partition partitionRef IN,  ///< The MTD partition reference.
-    uint32 blocksNumber OUT,    ///< Total blocks number.
-    uint32 badBlocksNumber OUT, ///< Bad blocks number.
-    uint32 blockSize OUT,       ///< Block size.
-    uint32 pageSize OUT         ///< Page size.
+    Partition partitionRef IN,  ///< MTD partition reference.
+    uint32 blocksNumber OUT,    ///< Total block count.
+    uint32 badBlocksNumber OUT, ///< Bad block count.
+    uint32 blockSize OUT,       ///< Block size in bytes.
+    uint32 pageSize OUT         ///< Page size in bytes.
 ) = 3;
 
 //--------------------------------------------------------------------------------------------------
@@ -294,14 +258,15 @@ FUNCTION le_result_t MtdInformation
  * Erases an MTD block.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Block erased successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdEraseBlock
 (
-    Partition partitionRef IN, ///< The MTD partition reference.
+    Partition partitionRef IN, ///< MTD partition reference.
     uint32 blockIndex IN       ///< Logical block index.
 ) = 4;
 
@@ -310,82 +275,87 @@ FUNCTION le_result_t MtdEraseBlock
  * Reads an MTD page.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Page read successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference or output buffer.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdReadPage
 (
-    Partition partitionRef IN,                 ///< The MTD partition reference.
+    Partition partitionRef IN,                 ///< MTD partition reference.
     uint32 pageIndex IN,                       ///< Page index.
-    uint8 readData[MTD_PAGE_MAX_READ_SIZE] OUT ///< Buffer read from the MTD page.
+    uint8 readData[MTD_PAGE_MAX_READ_SIZE] OUT ///< Data read from the page.
 ) = 5;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Writes MTD page.
+ * Writes an MTD page.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Page written successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdWritePage
 (
-    Partition partitionRef IN,                  ///< The MTD partition reference.
+    Partition partitionRef IN,                  ///< MTD partition reference.
     uint32 pageIndex IN,                        ///< Page index.
-    uint8 writeData[MTD_PAGE_MAX_WRITE_SIZE] IN ///< Buffer to be written to the MTD block.
+    uint8 writeData[MTD_PAGE_MAX_WRITE_SIZE] IN ///< Data to write.
 ) = 6;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Reads an MTD partition.
+ * Reads a byte range from an MTD partition.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Data read successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference or output buffer.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdRead
 (
-    Partition partitionRef IN,            ///< The MTD partition reference.
-    uint32 offset IN,                     ///< The MTD partition offset.
-    uint8 readData[MTD_MAX_READ_SIZE] OUT ///< Buffer read from the MTD page.
+    Partition partitionRef IN,            ///< MTD partition reference.
+    uint32 offset IN,                     ///< Byte offset in the partition.
+    uint8 readData[MTD_MAX_READ_SIZE] OUT ///< Data read from the partition.
 ) = 7;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Writes MTD partition.
+ * Writes a byte range to an MTD partition.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Data written successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdWrite
 (
-    Partition partitionRef IN,             ///< The MTD partition reference.
-    uint32 offset IN,                      ///< The MTD partition offset.
-    uint8 writeData[MTD_MAX_WRITE_SIZE] IN ///< Buffer to be written to the MTD block.
+    Partition partitionRef IN,             ///< MTD partition reference.
+    uint32 offset IN,                      ///< Byte offset in the partition.
+    uint8 writeData[MTD_MAX_WRITE_SIZE] IN ///< Data to write.
 ) = 8;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Erases MTD partition.
+ * Erases an entire MTD partition (bad blocks are skipped).
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Erase completed (bad blocks skipped and logged).
+ *  - LE_BAD_PARAMETER -- Invalid reference.
+ *  - LE_NOT_FOUND -- partitionRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t MtdErase
 (
-    Partition partitionRef IN ///< The MTD partition reference.
+    Partition partitionRef IN ///< MTD partition reference.
 ) = 9;
 
 //--------------------------------------------------------------------------------------------------
@@ -393,47 +363,47 @@ FUNCTION le_result_t MtdErase
  * Checks if an MTD block is good.
  *
  * @return
- *  - true -- Good block.
- *  - false -- Bad block.
- *
+ *  - true -- Block is good.
+ *  - false -- Block is bad, reference is invalid, or lower-layer query failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION bool MtdIsBlockGood
 (
-    Partition partitionRef IN, ///< The MTD partition reference.
+    Partition partitionRef IN, ///< MTD partition reference.
     uint32 blockIndex IN       ///< Logical block index.
 ) = 10;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Opens UBI volume for read and write.
+ * Opens a UBI volume.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Volume opened successfully.
+ *  - LE_BAD_PARAMETER -- Invalid volume name, output pointer, or mode.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UbiOpen
 (
     string volumeName[VOLUME_NAME_MAX_BYTES] IN, ///< UBI volume name.
-    OpenMode mode IN,                            ///< Opening mode.
-    Volume volumeRef OUT                         ///< The UBI volume reference.
+    OpenMode mode IN,                            ///< Open mode.
+    Volume volumeRef OUT                         ///< UBI volume reference.
 ) = 11;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Closes UBI volume.
+ * Closes a UBI volume.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Volume closed successfully.
+ *  - LE_BAD_PARAMETER -- volumeRef is invalid.
+ *  - LE_NOT_FOUND -- volumeRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UbiClose
 (
-    Volume volumeRef IN ///< The UBI volume reference.
+    Volume volumeRef IN ///< UBI volume reference.
 ) = 12;
 
 //--------------------------------------------------------------------------------------------------
@@ -441,83 +411,88 @@ FUNCTION le_result_t UbiClose
  * Gets UBI volume information.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Information returned successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference or output pointer.
+ *  - LE_NOT_FOUND -- volumeRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UbiInformation
 (
-    Volume volumeRef IN,      ///< The UBI volume reference.
-    uint32 lebNumber OUT,     ///< Total logical erase blocks number.
-    uint32 freeLebNumber OUT, ///< Free logical erase blocks number.
-    uint32 volumeSize OUT     ///< Volume size.
+    Volume volumeRef IN,      ///< UBI volume reference.
+    uint32 lebNumber OUT,     ///< Total logical erase block count.
+    uint32 freeLebNumber OUT, ///< Free logical erase block count.
+    uint32 volumeSize OUT     ///< Volume size in bytes.
 ) = 13;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Reads UBI volume.
+ * Reads data from a UBI volume at a byte offset.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Data read successfully.
+ *  - LE_BAD_PARAMETER -- Invalid reference or output buffer.
+ *  - LE_NOT_FOUND -- volumeRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UbiRead
 (
-    Volume volumeRef IN,                  ///< The UBI volume reference.
-    uint32 offset IN,                     ///< The UBI volume offset.
-    uint8 readData[UBI_MAX_READ_SIZE] OUT ///< Buffer read from UBI volume.
+    Volume volumeRef IN,                  ///< UBI volume reference.
+    uint32 offset IN,                     ///< Byte offset in the volume.
+    uint8 readData[UBI_MAX_READ_SIZE] OUT ///< Data read from the volume.
 ) = 14;
 
+//--------------------------------------------------------------------------------------------------
 /**
- * Initiates write size of UBI volume.
+ * Declares the total number of bytes to write before starting a UBI write sequence.
  *
- * @b NOTE: Users should set the number of bytes before subsequent
- *       write operations.
+ * @b NOTE: Call this before taf_flash_UbiWrite().
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Write size registered successfully.
+ *  - LE_BAD_PARAMETER -- volumeRef is invalid.
+ *  - LE_NOT_FOUND -- volumeRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UbiInitWrite
 (
-    Volume volumeRef IN, ///< The UBI volume reference.
-    int64 writeBytes IN  ///< The number of bytes set to write to UBI volume.
+    Volume volumeRef IN, ///< UBI volume reference.
+    int64 writeBytes IN  ///< Total bytes to write.
 ) = 15;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Writes data to UBI volume.
+ * Appends data to a UBI volume.
  *
- * @b NOTE: Users should keep the context of writing UBI volume.
+ * @b NOTE: Call taf_flash_UbiInitWrite() first to declare the total write size.
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Data written successfully.
+ *  - LE_BAD_PARAMETER -- volumeRef is invalid.
+ *  - LE_NOT_FOUND -- volumeRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UbiWrite
 (
-    Volume volumeRef IN,                   ///< The UBI volume reference.
-    uint8 writeData[UBI_MAX_WRITE_SIZE] IN ///< Buffer to be written to UBI volume.
+    Volume volumeRef IN,                   ///< UBI volume reference.
+    uint8 writeData[UBI_MAX_WRITE_SIZE] IN ///< Data to write.
 ) = 16;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Erases UBI volume.
+ * Erases a UBI volume (closes, erases, and reopens it).
  *
  * @return
- *  - LE_FAULT -- Failed.
- *  - LE_OK -- Succeeded.
- *
+ *  - LE_OK -- Volume erased and reopened successfully.
+ *  - LE_BAD_PARAMETER -- volumeRef is invalid.
+ *  - LE_NOT_FOUND -- volumeRef is not valid.
+ *  - LE_FAULT -- Lower-layer failure.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UbiErase
 (
-    Volume volumeRef IN ///< The UBI volume reference.
+    Volume volumeRef IN ///< UBI volume reference.
 ) = 17;
