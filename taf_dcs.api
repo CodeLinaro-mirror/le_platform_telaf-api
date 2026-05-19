@@ -2472,3 +2472,19 @@ FUNCTION le_result_t GetThroughputQuality
     LinkDirection     direction IN, ///< Link direction.
     ThroughputQuality quality   OUT ///< Throughput quality.
 ) = 79;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets the data profile interface name.
+ *
+ * @return
+ *  - LE_OK        -- Succeeded.
+ *  - LE_NOT_FOUND -- Profile reference was not found.
+ *  - LE_FAULT     -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetInterface
+(
+    Profile profileRef             IN, ///< The profile reference.
+    string  inteface[NAME_MAX_LEN] IN  ///< The interface name.
+) = 80;
