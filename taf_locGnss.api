@@ -1247,29 +1247,99 @@
  * @section taf_locGnss_usage_flow Typical application call flow
  *
  * @rstblock
- * .. image:: /rst/flow_diagrams/location_usage_flow.jpg
+ * 
+ * .. mermaid::
  *
- * The Location application locates in NAD device and access the tafLocationSvc on the corresponding NAD device.
+ *   sequenceDiagram
+ *       participant App as Location Application
+*       participant Svc as tafLocationSvc
+
+ *       Note over App,Svc: Session setup
+ *       App->>Svc: 1. taf_locGnss_ConnectService()
+ *       App->>Svc: 2. taf_locGnss_Enable()
+ *       Svc-->>App: LE_OK
+
+ *       Note over App,Svc: Start GNSS session
+ *       App->>Svc: 3. taf_locGnss_Start()
+ *       Svc-->>App: LE_OK
+
+ *       Note over App,Svc: Register position handler
+ *       App->>Svc: 4. taf_locGnss_AddPositionHandler(handlerFunc, ctx)
+ *       Svc-->>App: PositionHandlerRef
+
+ *       Note over App,Svc: Position fix received
+ *       Svc->>App: 5. PositionHandlerFunction(positionSampleRef, ctx)
+
+ *       Note over App,Svc: Check fix state (2D/3D)
+ *       App->>Svc: 6. taf_locGnss_GetPositionState(positionSampleRef, &state)
+ *       Svc-->>App: LE_OK (TAF_LOCGNSS_STATE_FIX_2D or TAF_LOCGNSS_STATE_FIX_3D)
+
+ *       Note over App,Svc: Get location (latitude, longitude, hAccuracy)
+ *       App->>Svc: 7. taf_locGnss_GetLocation(positionSampleRef, &lat, &lon, &hAcc)
+ *       Svc-->>App: LE_OK
+
+ *       Note over App,Svc: Get altitude (3D fix only)
+ *       App->>Svc: 8. taf_locGnss_GetAltitude(positionSampleRef, &alt, &vAcc)
+ *       Svc-->>App: LE_OK
+
+ *       Note over App,Svc: Get direction
+ *       App->>Svc: 9. taf_locGnss_GetDirection(positionSampleRef, &dir, &dirAcc)
+ *       Svc-->>App: LE_OK
+
+ *       Note over App,Svc: Get horizontal speed
+ *       App->>Svc: 10. taf_locGnss_GetHorizontalSpeed(positionSampleRef, &hSpd, &hSpdAcc)
+ *       Svc-->>App: LE_OK
+
+ *       Note over App,Svc: Get vertical speed
+ *       App->>Svc: 11. taf_locGnss_GetVerticalSpeed(positionSampleRef, &vSpd, &vSpdAcc)
+ *       Svc-->>App: LE_OK
+
+ *       Note over App,Svc: Release sample
+ *       App->>Svc: 12. taf_locGnss_ReleaseSampleRef(positionSampleRef)
+
+ *       Note over App,Svc: Remove handler when done
+ *       App->>Svc: 13. taf_locGnss_RemovePositionHandler(positionHandlerRef)
+
+ *       Note over App,Svc: Stop GNSS session
+ *       App->>Svc: 14. taf_locGnss_Stop()
+ *       Svc-->>App: LE_OK
  *
- * #0 -- Start GNSS session with the service.
  *
- * #1 -- Add the position handler to be able to receive any GNSS fixes received from the location service.
+ * .. list-table::
+ *  :header-rows: 1
+ *  :class: longtable table-wrap
+ *  :widths: 10 90
  *
- * #2 -- Get location information including longitude, latitude and horizontal accuracy.
- *
- * #3 -- Get the altitude information and its accuracy.
- *
- * #4 -- Get the vehicle direction information and its accuracy.
- *
- * #5 -- Get the horizontal speed information and its accuracy.
- *
- * #6 -- Get the vertical speed information and its accuracy.
- *
- * #7 -- Get the position state, ex. 2D, 3D and Estimated Fix.
- *
- * #8 -- When there's no need to receive any GNSS fixes from the application, the registered handler reference can be removed.
- *
- * #9 -- Stop the GNSS session with the service. This will stop receiving fixes at the location service.
+ *  * - Step
+ *    - Description
+ *  * - 1
+ *    - Connect to the location service.
+ *  * - 2
+ *    - Initialize the location service.
+ *  * - 3
+ *    - Start the GNSS session.
+ *  * - 4
+ *    - Add the position handler to be able to receive any GNSS fixes received from the location service.
+ *  * - 5
+ *    - Receive the position fix from the handler.
+ *  * - 6
+ *    - Check the fix state to determine the fix type and extract coordinates. A 2D fix provides latitude, longitude, and horizontal accuracy. A 3D fix adds altitude and vertical accuracy.
+ *  * - 7
+ *    - Get location information including longitude, latitude and horizontal accuracy. Latitude and longitude use the WGS84 coordinate system and are provided in degrees with 6 decimal places (value / 1,000,000). Horizontal accuracy is in centimeters with a 68% confidence level.
+ *  * - 8
+ *    - Get the altitude information and its vertical accuracy.
+ *  * - 9
+ *    - Get the vehicle direction information and its accuracy.
+ *  * - 10
+ *    - Get the horizontal speed information and its accuracy.
+ *  * - 11
+ *    - Get the vertical speed information and its accuracy.
+ *  * - 12
+ *    - Release the sample reference.
+ *  * - 13
+ *    - When there's no need to receive any GNSS fixes from the application, the registered handler reference can be removed.
+ *  * - 14
+ *    - Stop the GNSS session with the service. This stops receiving fixes at the location service.
  *
  * @endrst
  *
