@@ -1235,6 +1235,38 @@
    }
    @endverbatim
  *
+ * - taf_locGnss_GetBaselineLength() -- Gets the baseline length
+ *   calculated at the configured integrity risk from the position sample reference.
+ * @verbatim
+   double baselineLength;
+   if(taf_locGnss_GetBaselineLength(positionSampleRef, &baselineLength) == LE_OK)
+   {
+     // Process after successfully getting the baseline length.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_GetAgeOfCorrections() -- Triggered inside PositionHandlerFunction() function
+ *    to get the age of corrections from the position sample reference.
+ * @verbatim
+   uint64_t ageOfCorrections;
+   if(taf_locGnss_GetAgeOfCorrections(positionSampleRef, &ageOfCorrections) == LE_OK)
+   {
+     // Process after successfully getting the age of corrections.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_SetEngineIntegrityRisk() -- Configures the integrity risk
+ * level to be used by the specified GNSS modem engine for protection level
+ * calculation in the position report.
+ * @verbatim
+   taf_locGnss_EngineType_t  engineType;
+   uint32_t integrityRisk = 10;
+   if(taf_locGnss_SetEngineIntegrityRisk(engineType, integrityRisk)== LE_OK)
+   {
+     // Process after successfully setting the integration risk for the specific engine.
+   }
+   @endverbatim
+ *
  * @subsection taf_locGnss_GetLeapSeconds Get leap seconds event information
  *
  * The leap seconds event information is retrieved by calling taf_locGnss_GetLeapSeconds() API.
@@ -4728,3 +4760,127 @@ FUNCTION le_result_t ConfigureOsnma
 (
     bool galOsnma  IN     ///< Enable or disable Galileo OSNMA.
 ) = 106;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Sets the integrity risk level to be used by the specified modem engine for protection level
+ * calculation in the position report.
+ *
+ * @b NOTE: If this API is not called for a particular engine, the engine will not calculate
+ *       protection levels and will not include them in its position report.
+ *
+ * @b NOTE: The valid range of the integrity risk is [1, 4e9 - 1], corresponding to an
+ *       actual probability range of [2.5e-10, 1 - 2.5e-10].
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *  - LE_NOT_PERMITTED  The Location service state is not ready or active.
+ *  - LE_NOT_SUPPORTED  Protection levels are not supported by the specified engine.
+ *  - LE_OUT_OF_RANGE   The integrityRisk parameter is outside the valid range.
+ *
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetEngineIntegrityRisk
+(
+    EngineType engtype IN,               ///< Engine type for which integrity risk is set.
+    uint32     integrityRisk IN          ///< The integrity risk is defined as a probability per
+                                         ///< epoch, in units of 2.5e-10.
+) = 107;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets the protection levels. Protection levels are calculated at the configured integrity risk
+ * and represent the bounds on the position error.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *
+ * @b NOTE: This API is valid only if integrity risk has been configured and is within
+ *       the valid range. If integrity risk is disabled, protection levels will not
+ *       be available and this API will return LE_FAULT.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetProtectionLevels
+(
+    Sample positionSampleRef IN,             ///< Position sample reference.
+    double protectionLevelAlongTrack  OUT,   ///< Along-track protection level, in unit of meter.
+    double protectionLevelCrossTrack OUT,    ///< Cross-track protection level, in unit of meter.
+    double protectionLevelVertical  OUT      ///< Vertical protection level, in unit of meter.
+) = 108;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets BaselineLength per client session.
+ * BaselineLength means the distance between the basestation and the receiver.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetBaselineLength
+(
+    Sample positionSampleRef IN,        ///< Position sample reference.
+    double baselineLength  OUT          ///< Baseline length, in unit of meter.
+) = 109;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets AgeOfCorrections per client session.
+ * Defines the time difference between the fix timestamp that uses the correction and
+ * the correction data timestamp.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetAgeOfCorrections
+(
+    Sample positionSampleRef IN,      ///< Position sample reference.
+    uint64 ageCorrections  OUT        ///< AgeOfCorrections, in unit of milliseconds.
+) = 110;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets IntegrityRiskUsed per client session. The returned value is applied in the computation
+ * of protection level parameters.
+ *
+ * @b NOTE: Valid range is [1, 4e9 - 1]. Values outside the valid range mean the integrity risk
+ * is disabled. When integrity risk is disabled, protection level parameters will not be available.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *  - LE_OUT_OF_RANGE   The integrityRiskUsed parameter is outside the valid range.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetIntegrityRiskUsed
+(
+    Sample positionSampleRef IN,        ///< Position sample reference.
+    uint32 integrityRiskUsed  OUT       ///< Integrity risk used, in units of 2.5e-10.
+) = 111;
