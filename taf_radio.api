@@ -305,7 +305,8 @@
  *  - taf_radio_GetRatOfSignalMetrics() -- Gets RATs of signal metrics.
  *
  *  - taf_radio_GetGsmSignalMetrics() / taf_radio_GetUmtsSignalMetrics() / taf_radio_GetLteSignalMetrics() /
- *    taf_radio_GetCdmaSignalMetrics() / taf_radio_GetNr5gSignalMetrics() -- Gets
+ *    taf_radio_GetCdmaSignalMetrics() / taf_radio_GetNr5gSignalMetrics() /taf_radio_GetGsmSignalMetricsSs() /
+ *    taf_radio_GetUmtsSignalMetricsEcio() / taf_radio_GetLteSignalMetricsRssi()-- Gets
  *    GSM/UMTS/LTE/CDMA/NR5G signal metrics, these APIs should be called after calling
  *    taf_radio_GetRatOfSignalMetrics to get the valid RAT. If the return value is
  *    INVALID_SIGNAL_STRENGTH_VALUE, it indicates that the signal metrics are unknown or not
@@ -338,6 +339,12 @@
            LE_INFO("LTE signal-to-noise ratio in 0.1 dB : %d\n", snr);
        } else {
            LE_ERROR("Fail to get LTE signal metrics.");
+       }
+
+       if (taf_radio_GetLteSignalMetricsRssi(metricsRef, &rssi) == LE_OK) {
+           LE_INFO("LTE RSSI in dBm: %d\n", rssi);
+       } else {
+           LE_ERROR("Fail to get LTE RSSI.");
        }
    }
  *
@@ -913,34 +920,152 @@
  *
  * @section c_taf_radio_carrier_aggregation Carrier Aggregation (CA) information
  *
- * Users can get LTE Carrier Aggregation status and subscribe to CA information changes.
+ * Users can query Carrier Aggregation (CA) information for a given phone ID and RAT.
+ * CA information is accessed through a CA information reference (CAInfo). Currently, the
+ * RAT-specific CA detail getters are provided for LTE only. CA change notifications are used to
+ * report LTE CA activation status and active component carrier (CC) count changes.
  *
- *  - taf_radio_GetCAInformation() / taf_radio_DeleteCAInformation() -- Creates/deletes a CA
- *    information reference. Currently only LTE (TAF_RADIO_RAT_LTE) is supported.
+ * Typical workflow:
  *
- *  - taf_radio_GetLteCAStatus() -- Gets the CA status (activated/deactivated) and the number of
- *    active component carriers.
+ *  1. Get a CAInfo reference via taf_radio_GetCAInformation().
+ *  2. Query LTE CA status, active component carrier (CC) count, and PCell/SCell details through
+ *     that reference via the corresponding LTE CA getters.
+ *  3. Release the CAInfo reference via taf_radio_DeleteCAInformation() when done.
+ *
+ * APIs:
+ *
+ *  - taf_radio_GetCAInformation() -- Gets a CA information reference for a given phone ID and RAT.
+ *    Currently only LTE (TAF_RADIO_RAT_LTE) is supported.
+ *
+ *  - taf_radio_DeleteCAInformation() -- Deletes/releases the CA information reference.
+ *
+ *  - taf_radio_GetLteCAStatus() -- Gets LTE CA status and number of active component carriers.
+ *
+ *  - taf_radio_GetLteCAPCellPci() / taf_radio_GetLteCAPCellFreq() /
+ *    taf_radio_GetLteCAPCellDlBandwidth() / taf_radio_GetLteCAPCellBand() -- Gets LTE CA primary
+ *    cell (PCell) details.
+ *
+ *  - taf_radio_GetLteCASCellCount() / taf_radio_GetLteCASCellPci() /
+ *    taf_radio_GetLteCASCellFreq() / taf_radio_GetLteCASCellDlBandwidth() /
+ *    taf_radio_GetLteCASCellBand() / taf_radio_GetLteCASCellState() /
+ *    taf_radio_GetLteCASCellIndex() / taf_radio_GetLteCASCellUlConfigured() -- Gets LTE CA
+ *    secondary cell (SCell) details by SCell array index.
  *
  *  - taf_radio_AddCAInfoHandler() / taf_radio_RemoveCAInfoHandler() -- Adds/removes handler for
- *    CA information changes. Currently only LTE is supported.
+ *    LTE CA activation status and active CC count changes. Currently only LTE is supported.
+ *
+ * Notes:
+ *
+ *  - The LTE-specific CA getters (taf_radio_GetLteCAStatus() and taf_radio_GetLteCA*()) are
+ *    applicable when the CAInfo reference was created for LTE.
+ *
+  *  - taf_radio_AddCAInfoHandler() reports CA activation status and active CC count changes.
+ *    PCell/SCell detail-only changes do not trigger this handler. The CAInfo reference passed to
+ *    the handler is the service-owned live cached reference for the phone ID and RAT. Applications
+ *    can use that reference to query the latest CA information through the CA getters.
+ *
+ *  - Applications should call taf_radio_GetCAInformation() after startup/restart or after
+ *    registering a CA handler, then use the LTE CA getters with the returned reference to obtain the
+ *    current CA information. CA handlers report subsequent activation status and active CC count
+ *    changes.
+ *
+ *  - SCell index range is [0..count-1], where count is returned by
+ *    taf_radio_GetLteCASCellCount().
+ *
+ *  - The CAInfo reference must be released by taf_radio_DeleteCAInformation() to avoid resource
+ *    leaks.
+ *
+ * The following example illustrates how to query LTE CA information.
  *
  * @code
  *
-   taf_radio_CAInfoRef_t caRef;
-   le_result_t res = taf_radio_GetCAInformation(phoneId, TAF_RADIO_RAT_LTE, &caRef);
-   if (res != LE_OK)
-       LE_ERROR("Failed to get CA information: %d", res);
-   else
+   uint8_t phoneId = 1;
+   taf_radio_CAInfoRef_t infoRef = NULL;
+
+   // 1. Get CA info reference for LTE.
+   le_result_t result = taf_radio_GetCAInformation(phoneId, TAF_RADIO_RAT_LTE, &infoRef);
+   if (result != LE_OK || infoRef == NULL)
    {
-       taf_radio_CAStatus_t status;
-       uint32_t activeCCNum;
-       res = taf_radio_GetLteCAStatus(caRef, &status, &activeCCNum);
-       if (res != LE_OK)
-           LE_ERROR("Failed to get LTE CA status: %d", res);
-       else
-           LE_INFO("CA status: %d, active CCs: %u", status, activeCCNum);
-       taf_radio_DeleteCAInformation(caRef);
+       LE_ERROR("Failed to get CA info reference, result=%d.", result);
+       return;
    }
+
+   // 2. Get LTE CA status and active CC count.
+   taf_radio_CAStatus_t caStatus;
+   uint32_t activeCcNum = 0;
+   result = taf_radio_GetLteCAStatus(infoRef, &caStatus, &activeCcNum);
+   if (result != LE_OK)
+   {
+       LE_ERROR("Failed to get LTE CA status, result=%d.", result);
+       (void)taf_radio_DeleteCAInformation(infoRef);
+       return;
+   }
+   LE_INFO("LTE CA status=%d, active CC num=%u.", (int)caStatus, activeCcNum);
+
+   // 3. Query PCell info.
+   uint16_t pPci = 0;
+   uint32_t pFreq = 0;
+   taf_radio_RFBandWidth_t pDlBw;
+   uint16_t pBand = 0;
+
+   if (taf_radio_GetLteCAPCellPci(infoRef, &pPci) == LE_OK)
+       LE_INFO("PCell PCI=%u.", pPci);
+
+   if (taf_radio_GetLteCAPCellFreq(infoRef, &pFreq) == LE_OK)
+       LE_INFO("PCell frequency/EARFCN=%u.", pFreq);
+
+   if (taf_radio_GetLteCAPCellDlBandwidth(infoRef, &pDlBw) == LE_OK)
+       LE_INFO("PCell downlink bandwidth=%d.", (int)pDlBw);
+
+   if (taf_radio_GetLteCAPCellBand(infoRef, &pBand) == LE_OK)
+       LE_INFO("PCell band=%u.", pBand);
+
+   // 4. Query SCell list.
+   uint32_t scellCount = 0;
+   result = taf_radio_GetLteCASCellCount(infoRef, &scellCount);
+   if (result != LE_OK)
+   {
+       LE_ERROR("Failed to get SCell count, result=%d.", result);
+       (void)taf_radio_DeleteCAInformation(infoRef);
+       return;
+   }
+
+   for (uint32_t i = 0; i < scellCount; i++)
+   {
+       uint16_t sPci = 0;
+       uint32_t sFreq = 0;
+       taf_radio_RFBandWidth_t sDlBw;
+       uint16_t sBand = 0;
+       taf_radio_CAScellState_t sState;
+       uint8_t sIndex = 0;
+       bool ulCfg = false;
+
+       if (taf_radio_GetLteCASCellPci(infoRef, i, &sPci) == LE_OK)
+           LE_INFO("SCell[%u] PCI=%u.", i, sPci);
+
+       if (taf_radio_GetLteCASCellFreq(infoRef, i, &sFreq) == LE_OK)
+           LE_INFO("SCell[%u] frequency/EARFCN=%u.", i, sFreq);
+
+       if (taf_radio_GetLteCASCellDlBandwidth(infoRef, i, &sDlBw) == LE_OK)
+           LE_INFO("SCell[%u] downlink bandwidth=%d.", i, (int)sDlBw);
+
+       if (taf_radio_GetLteCASCellBand(infoRef, i, &sBand) == LE_OK)
+           LE_INFO("SCell[%u] band=%u.", i, sBand);
+
+       if (taf_radio_GetLteCASCellState(infoRef, i, &sState) == LE_OK)
+           LE_INFO("SCell[%u] state=%d.", i, (int)sState);
+
+       if (taf_radio_GetLteCASCellIndex(infoRef, i, &sIndex) == LE_OK)
+           LE_INFO("SCell[%u] modem index=%u.", i, sIndex);
+
+       if (taf_radio_GetLteCASCellUlConfigured(infoRef, i, &ulCfg) == LE_OK)
+           LE_INFO("SCell[%u] uplink configured=%s.", i, ulCfg ? "true" : "false");
+   }
+
+   // 5. Always release the CA info reference.
+   result = taf_radio_DeleteCAInformation(infoRef);
+   if (result != LE_OK)
+       LE_ERROR("Failed to delete CA info reference, result=%d.", result);
  *
    @endcode
  *
@@ -1521,13 +1646,29 @@ ENUM NrIconType
 
 //--------------------------------------------------------------------------------------------------
 /**
- * CA status
+ * Carrier Aggregation (CA) activation status.
  */
 //--------------------------------------------------------------------------------------------------
 ENUM CAStatus
 {
     CA_STATUS_DEACTIVATED, ///< Either not configured or configured but not activated.
     CA_STATUS_ACTIVATED    ///< Configured and activated.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Secondary cell (SCell) state in Carrier Aggregation
+ *
+ * @instaging
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM CAScellState
+{
+    CA_SCELL_STATE_INVALID                 = -1,  ///< Invalid / not available.
+    CA_SCELL_STATE_DECONFIGURED            = 0,   ///< Deconfigured.
+    CA_SCELL_STATE_CONFIGURED_DEACTIVATED  = 1,   ///< Configured and deactivated.
+    CA_SCELL_STATE_CONFIGURED_ACTIVATED    = 2    ///< Configured and activated.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -1893,10 +2034,10 @@ HANDLER CellInfoChangeHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Handler for Carrier Aggregation(CA) information.
+ * Handler for Carrier Aggregation (CA) information changes.
  *
  * @param[in] phoneId    Phone ID.
- * @param[in] infoRef    CA information reference.
+ * @param[in] infoRef    CA information reference for this event.
  * @param[in] contextPtr Context pointer.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2036,7 +2177,12 @@ EVENT CellInfoChange
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Event to report Carrier Aggregation(CA) information.
+ * Event to report Carrier Aggregation (CA) information changes.
+ *
+ * @b NOTE: Currently only LTE is supported. The event is reported when LTE CA activation status or
+ *          active component carrier count changes. PCell/SCell detail-only changes are not reported
+ *          as CA events. The CAInfo reference delivered to the handler can be used with the LTE CA
+ *          getters to read CA information associated with the event.
  */
 //--------------------------------------------------------------------------------------------------
 EVENT CAInfo
@@ -2654,17 +2800,19 @@ FUNCTION RatBitMask GetRatOfSignalMetrics
  * @return
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
- *  - LE_UNAVAILABLE -- GSM unavailable.
  *  - LE_OK -- Succeeded.
  *
  * @deprecated The parameter @ber is deprecated.
+ *
+ * @b NOTE: If GSM signal metrics are unavailable, output parameters are set to
+ *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetGsmSignalMetrics
 (
     Metrics MetricsRef IN, ///< The signal metrics reference.
-    int32 rssi OUT,        ///< Received signal strength indicator in dBm.
-    uint32 ber OUT         ///< Bit error rate, valid from 0 to 7.
+    int32 rssi OUT,        ///< GSM RSSI in dBm, valid range [-100, -25].
+    uint32 ber OUT         ///< GSM bit error rate, valid range [0, 7].
 ) =58;
 
 //--------------------------------------------------------------------------------------------------
@@ -2673,19 +2821,22 @@ FUNCTION le_result_t GetGsmSignalMetrics
  *
  * @return
  *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_UNAVAILABLE -- UMTS unavailable.
  *  - LE_OK -- Succeeded.
  *
  * @deprecated The parameter @ber is deprecated.
+ *
+ * @b NOTE: If UMTS signal metrics are unavailable, output parameters are set to
+ *           TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetUmtsSignalMetrics
 (
     Metrics MetricsRef IN, ///< The signal metrics reference.
-    int32 ss OUT,          ///< Signal strength in dBm.
-    uint32 ber OUT,        ///< WCDMA bit error rate, valid from 0 to 7, 0x7FFFFFFF is unavailable.
-    int32 rscp OUT         ///< Receive signal channel power in dBm.
+    int32 ss OUT,          ///< UMTS signal strength in dBm, valid range: RSCP [-120, -24] or RSSI
+                           ///< [-113, -51] if RSCP is unavailable.
+    uint32 ber OUT,        ///< WCDMA bit error rate, valid range [0, 7].
+    int32 rscp OUT         ///< WCDMA received signal code power in dBm, valid range [-120, -24].
 ) =59;
 
 //--------------------------------------------------------------------------------------------------
@@ -2695,17 +2846,20 @@ FUNCTION le_result_t GetUmtsSignalMetrics
  * @return
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
- *  - LE_UNAVAILABLE -- LTE unavailable.
  *  - LE_OK -- Succeeded.
+ *
+ * @b NOTE: If LTE signal metrics are unavailable, output parameters are set to
+ *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteSignalMetrics
 (
     Metrics MetricsRef IN, ///< The signal metrics reference.
-    int32 ss OUT,          ///< Signal strength in dBm.
-    int32 rsrq OUT,        ///< Reference signal receive quality in dB.
-    int32 rsrp OUT,        ///< Reference signal receive power in dBm.
-    int32 snr OUT          ///< Signal-to-noise ratio in units of 0.1 dB.
+    int32 ss OUT,          ///< LTE signal strength in dBm based on RSRP, valid range [-140, -43].
+                           ///< This value may be the same as rsrp.
+    int32 rsrq OUT,        ///< LTE reference signal receive quality in dB, valid range [-34, 3].
+    int32 rsrp OUT,        ///< LTE reference signal receive power in dBm, valid range [-140, -43].
+    int32 snr OUT          ///< LTE signal-to-noise ratio in units of 0.1 dB, valid range [-200, 300].
 ) =60;
 
 //--------------------------------------------------------------------------------------------------
@@ -2715,16 +2869,20 @@ FUNCTION le_result_t GetLteSignalMetrics
  * @return
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
- *  - LE_UNAVAILABLE -- CDMA unavailable.
  *  - LE_OK -- Succeeded.
+ *
+ * @deprecated This API is scheduled to be removed in the future.
+ *
+ * @b NOTE: If CDMA signal metrics are unavailable, output parameters are set to
+ *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCdmaSignalMetrics
 (
     Metrics MetricsRef IN, ///< The signal metrics reference.
-    int32 ss OUT,          ///< Signal strength in dBm.
+    int32 ss OUT,          ///< CDMA/EVDO signal strength in dBm.
     int32 ecio OUT,        ///< CDMA Ec/Io in dB.
-    int32 snr OUT,         ///< EVDO signal-to-noise ratio in dB.
+    int32 snr OUT,         ///< EVDO signal-to-noise ratio, valid range [0, 8].
     int32 io OUT           ///< EVDO Ec/Io in dB.
 ) =61;
 
@@ -2736,14 +2894,18 @@ FUNCTION le_result_t GetCdmaSignalMetrics
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *
+ * @b NOTE: If NR5G signal metrics are unavailable, output parameters are set to
+ *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNr5gSignalMetrics
 (
     Metrics MetricsRef IN, ///< The signal metrics reference.
-    int32 rsrq OUT,        ///< Reference Signal Receive Quality in dB.
-    int32 rsrp OUT,        ///< Reference Signal Receive Power in dBm.
-    int32 snr OUT          ///< Signal-to-Noise Ratio in units of 0.1 dB.
+    int32 rsrq OUT,        ///< NR5G reference signal receive quality in dB, valid range [-43, 20].
+    int32 rsrp OUT,        ///< NR5G reference signal receive power in dBm, valid range [-156, -31].
+                           ///< Rsrp can be used as the dBm representation of NR5G signal strength.
+    int32 snr OUT          ///< NR5G signal-to-noise ratio in units of 0.1 dB, valid range [-230, 400].
 ) =62;
 
 //--------------------------------------------------------------------------------------------------
@@ -3907,7 +4069,13 @@ FUNCTION le_result_t GetNrIconType
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Gets the reference of Carrier Aggregation(CA) information.
+ * Gets a Carrier Aggregation (CA) information reference.
+ *
+ * @b NOTE: The returned CAInfo reference is generated for the requested phone ID and RAT. Applications
+ *          can use the LTE CA getters with this reference to read the CA information obtained for that
+ *          query, including status, active CC count, and PCell/SCell details. The returned reference
+ *          must be released with taf_radio_DeleteCAInformation() when it is no longer needed. Currently
+ *          only LTE is supported.
  *
  * @return
  *  - LE_OK -- Succeeded.
@@ -3942,7 +4110,7 @@ FUNCTION le_result_t DeleteCAInformation
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Gets the Carrier Aggregation(CA) status and active CC count of LTE.
+ * Gets the LTE Carrier Aggregation (CA) status and active CC count from a CAInfo reference.
  *
  * @return
  *  - LE_OK -- Succeeded.
@@ -3953,8 +4121,8 @@ FUNCTION le_result_t DeleteCAInformation
 FUNCTION le_result_t GetLteCAStatus
 (
     CAInfo infoRef IN,     ///< CA information reference.
-    CAStatus status OUT,   ///< CA status
-    uint32 activeCCNum OUT ///< Numbers of active component carriers
+    CAStatus status OUT,   ///< CA status.
+    uint32 activeCCNum OUT ///< Number of active component carriers.
 ) =77;
 
 //--------------------------------------------------------------------------------------------------
@@ -4001,4 +4169,299 @@ FUNCTION le_result_t GetEndcConnectionStatus
 (
     ConnStatus statusRef IN,      ///< Reference
     NREndcAvailability status OUT ///< ENDC connection status
-) =80;
+) = 80;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA primary cell (PCell) physical cell ID (PCI) from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCAPCellPci
+(
+    CAInfo infoRef IN, ///< CA information reference.
+    uint16 pci OUT     ///< PCell physical cell ID.
+) = 81;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA primary cell (PCell) frequency/EARFCN from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCAPCellFreq
+(
+    CAInfo infoRef IN, ///< CA information reference.
+    uint32 freq OUT    ///< PCell frequency/EARFCN.
+) = 82;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA primary cell (PCell) downlink bandwidth from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCAPCellDlBandwidth
+(
+    CAInfo infoRef IN,    ///< CA information reference.
+    RFBandWidth dlBw OUT  ///< PCell downlink bandwidth.
+) = 83;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA primary cell (PCell) band from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCAPCellBand
+(
+    CAInfo infoRef IN, ///< CA information reference.
+    uint16 band OUT    ///< PCell band.
+) = 84;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the number of LTE CA secondary cells (SCells) from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellCount
+(
+    CAInfo infoRef IN, ///< CA information reference.
+    uint32 count OUT   ///< Number of SCells.
+) = 85;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA secondary cell (SCell) physical cell ID (PCI) by array index from a CAInfo
+ * reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OUT_OF_RANGE -- Index out of range.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellPci
+(
+    CAInfo infoRef IN, ///< CA information reference.
+    uint32 index IN,   ///< SCell array index [0..count-1].
+    uint16 pci OUT     ///< SCell physical cell ID.
+) = 86;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA secondary cell (SCell) frequency/EARFCN by array index from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OUT_OF_RANGE -- Index out of range.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellFreq
+(
+    CAInfo infoRef IN, ///< CA information reference.
+    uint32 index IN,   ///< SCell array index [0..count-1].
+    uint32 freq OUT    ///< SCell frequency/EARFCN.
+) = 87;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA secondary cell (SCell) downlink bandwidth by array index from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OUT_OF_RANGE -- Index out of range.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellDlBandwidth
+(
+    CAInfo infoRef IN,    ///< CA information reference.
+    uint32 index IN,      ///< SCell array index [0..count-1].
+    RFBandWidth dlBw OUT  ///< SCell downlink bandwidth.
+) = 88;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA secondary cell (SCell) band by array index from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OUT_OF_RANGE -- Index out of range.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellBand
+(
+    CAInfo infoRef IN, ///< CA information reference.
+    uint32 index IN,   ///< SCell array index [0..count-1].
+    uint16 band OUT    ///< SCell band.
+) = 89;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA secondary cell (SCell) state by array index from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OUT_OF_RANGE -- Index out of range.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellState
+(
+    CAInfo infoRef IN,     ///< CA information reference.
+    uint32 index IN,       ///< SCell array index [0..count-1].
+    CAScellState state OUT ///< SCell state.
+) = 90;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA secondary cell (SCell) modem index by array index from a CAInfo reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OUT_OF_RANGE -- Index out of range.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellIndex
+(
+    CAInfo infoRef IN,    ///< CA information reference.
+    uint32 index IN,      ///< SCell array index [0..count-1].
+    uint8 scellIndex OUT  ///< SCell modem index.
+) = 91;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the LTE CA secondary cell (SCell) uplink configured flag by array index from a CAInfo
+ * reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OUT_OF_RANGE -- Index out of range.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteCASCellUlConfigured
+(
+    CAInfo infoRef IN,      ///< CA information reference.
+    uint32 index IN,        ///< SCell array index [0..count-1].
+    bool ulConfigured OUT   ///< True if uplink is configured for this SCell.
+) = 92;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Gets GSM signal strength value in dBm from signal metrics.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OK -- Succeeded.
+ *
+ * @b NOTE: If GSM signal strength in dBm is unavailable, output parameters are set to
+ *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetGsmSignalMetricsSs
+(
+    Metrics MetricsRef IN, ///< The signal metrics reference.
+    int32 ss OUT           ///< GSM signal strength in dBm based on RSSI, valid range [-113, -51].
+) =93;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Gets WCDMA energy per chip to interference power ratio in dB from signal metrics.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OK -- Succeeded.
+ *
+ * @b NOTE: If WCDMA Ec/Io is unavailable, output parameters are set to
+ *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetUmtsSignalMetricsEcio
+(
+    Metrics MetricsRef IN, ///< The signal metrics reference.
+    int32 ecio OUT         ///< UMTS Ec/Io in dB, valid range [-20, 0].
+) =94;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Gets LTE RSSI from signal metrics.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_OK -- Succeeded.
+ *
+ * @b NOTE: If LTE RSSI is unavailable, output parameters are set to
+ *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLteSignalMetricsRssi
+(
+    Metrics MetricsRef IN, ///< The signal metrics reference.
+    int32 rssi OUT         ///< LTE RSSI in dBm, valid range [-100, -25].
+) =95;
