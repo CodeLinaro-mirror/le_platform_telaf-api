@@ -243,6 +243,8 @@
  *
  * - @ref taf_sim_SetRefreshAllow() -- Sets refresh allow or disallow.
  *
+ * - @ref taf_sim_DeleteSession() -- Deletes a refresh session.
+ *
  * @section taf_sim_profile_switch SIM profile switch
  *
  * If there are several subscriptions/profiles in the eUICC (multi-profile), and one of
@@ -1361,3 +1363,21 @@ FUNCTION le_result_t GetSlotCount
 (
     int32     count OUT        ///< Slot count.
 ) = 55;
+//-------------------------------------------------------------------------------------------------
+/**
+ * Deletes a refresh session previously created by taf_sim_CreateSession().
+ *
+ * Releases all resources associated with the session. If a refresh change handler is still
+ * registered on this session, it is removed as part of the deletion.
+ *
+ * @return
+ * - LE_FAULT            Failed.
+ * - LE_OK               Succeeded.
+ *
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t DeleteSession
+(
+    Refresh refreshSessionRef IN   ///< Refresh session reference.
+) = 56;
+//-------------------------------------------------------------------------------------------------
