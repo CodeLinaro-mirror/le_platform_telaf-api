@@ -1214,6 +1214,7 @@ EVENT DestNatChange
  *
  * @return
  *   - LE_OK -- Succeeded.
+ *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -1473,7 +1474,7 @@ FUNCTION DestNatEntry GetNextDestNatEntry
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   - LE_NOT_FOUND -- Entry not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetDestNatEntryDetails
@@ -1492,7 +1493,7 @@ FUNCTION le_result_t GetDestNatEntryDetails
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   - LE_NOT_FOUND -- List not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteDestNatEntryList
@@ -1527,7 +1528,7 @@ FUNCTION Vlan CreateVlan
  *   - LE_OK -- Succeeded.
  *   - LE_NOT_FOUND -- VLAN was not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   - LE_OUT_OF_RANGE -- Priority out of range.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetVlanPriority
@@ -1580,6 +1581,7 @@ FUNCTION Vlan GetVlanById
  *   - LE_NOT_FOUND -- VLAN was not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_DUPLICATE -- ifType already added into the VLAN.
+ *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -1600,6 +1602,7 @@ FUNCTION le_result_t AddVlanInterface
  *   - LE_OK -- Succeeded.
  *   - LE_NOT_FOUND -- VLAN was not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
+ *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -1911,8 +1914,8 @@ FUNCTION EnableL2tpAsync
  *
  * @return
  *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- Not found.
- *   - LE_FAULT -- Failed.
+ *   - LE_BAD_PARAMETER -- Bad parameter.
+ *   - LE_FAULT -- Failed to disable L2TP.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DisableL2tp
@@ -2379,6 +2382,8 @@ FUNCTION EnableSocksAsync
  *
  * @return
  *   - LE_OK -- Succeeded.
+ *   - LE_NOT_FOUND -- SOCKS not found.
+ *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2432,6 +2437,7 @@ FUNCTION AuthMethod GetSocksAuthMethod
  *
  * @return
  *   - LE_OK -- Succeeded.
+ *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2446,6 +2452,7 @@ FUNCTION le_result_t SetSocksLanInterface
  *
  * @return
  *   - LE_OK -- Succeeded.
+ *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2460,6 +2467,7 @@ FUNCTION le_result_t GetSocksLanInterface
  *
  * @return
  *   - LE_OK -- Succeeded.
+ *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2475,6 +2483,7 @@ FUNCTION le_result_t AddSocksAssociation
  *
  * @return
  *   - LE_OK -- Succeeded.
+ *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2488,9 +2497,7 @@ FUNCTION le_result_t RemoveSocksAssociation
  * Adds GSB configuration for an interface.
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   - LE_UNSUPPORTED -- Not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddGsb
@@ -2505,9 +2512,7 @@ FUNCTION le_result_t AddGsb
  * Removes GSB configuration for an interface.
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   - LE_UNSUPPORTED -- Not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemoveGsb
@@ -2520,8 +2525,7 @@ FUNCTION le_result_t RemoveGsb
  * Enables GSB in the system.
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_FAULT -- Failed.
+ *   - LE_UNSUPPORTED -- Not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t EnableGsb
@@ -2533,8 +2537,7 @@ FUNCTION le_result_t EnableGsb
  * Disables GSB in the system.
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_FAULT -- Failed.
+ *   - LE_UNSUPPORTED -- Not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DisableGsb
@@ -2587,10 +2590,7 @@ FUNCTION Gsb GetNextGsb
  * Deletes the GSB list.
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- Not found.
- *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   - LE_UNSUPPORTED -- Not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteGsbList
@@ -2603,10 +2603,7 @@ FUNCTION le_result_t DeleteGsbList
  * Gets the interface name of a GSB.
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- Not found.
- *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   LE_UNSUPPORTED -- Not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetGsbInterfaceName
@@ -2620,10 +2617,7 @@ FUNCTION le_result_t GetGsbInterfaceName
  * Gets the interface type of a GSB.
  *
  * @return
- *   - GSB_UNKNOWN -- Unknown type.
- *   - GSB_WLAN_AP -- WLAN AP.
- *   - GSB_WLAN_STA -- WLAN station.
- *   - GSB_ETH -- Ethernet.
+ *   - TAF_NET_GSB_UNKNOWN -- Always returns unknown (not supported).
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION GsbIfType GetGsbInterfaceType
@@ -2636,8 +2630,7 @@ FUNCTION GsbIfType GetGsbInterfaceType
  * Gets the bandwidth of a GSB.
  *
  * @return
- *   - -1 -- Failed.
- *   - Others -- Succeeded.
+ *   - -1 -- Always returns -1 (not supported).
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION int32 GetGsbBandWidth
@@ -2658,6 +2651,7 @@ FUNCTION int32 GetGsbBandWidth
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
+ *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2680,6 +2674,7 @@ FUNCTION le_result_t GetBackhaulPreference
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
+ *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2755,9 +2750,8 @@ FUNCTION le_result_t SetVlanBackhaulType
  *
  * @return
  *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- VLAN was not found.
+ *   - LE_NOT_FOUND -- VLAN not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetVlanBackhaulVlanId
@@ -2774,9 +2768,8 @@ FUNCTION le_result_t SetVlanBackhaulVlanId
  *
  * @return
  *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- VLAN was not found.
+ *   - LE_NOT_FOUND -- VLAN not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetVlanBackhaulPhoneId
@@ -2793,9 +2786,8 @@ FUNCTION le_result_t SetVlanBackhaulPhoneId
  *
  * @return
  *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- VLAN was not found.
+ *   - LE_NOT_FOUND -- VLAN not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetVlanBackhaulProfileId
@@ -2819,8 +2811,9 @@ FUNCTION le_result_t SetVlanBackhaulProfileId
  * @instaging
  * @return
  *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- VLAN was not found.
+ *   - LE_NOT_FOUND -- VLAN not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
+ *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2841,8 +2834,9 @@ FUNCTION le_result_t BindVlanWithBackhaul
  * @instaging
  * @return
  *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- VLAN was not found.
+ *   - LE_NOT_FOUND -- VLAN not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
+ *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
@@ -2954,8 +2948,8 @@ FUNCTION le_result_t SetIPPassThroughConfig
  * @instaging
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_FAULT -- Failed.
+ *   - Interface reference if successful.
+ *   - NULL if failed or not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION Interface GetIPPassThroughConfig
@@ -3038,9 +3032,8 @@ FUNCTION le_result_t SetIPConfig
  *
  * @return
  *   - LE_OK -- Succeeded.
- *   - LE_NOT_FOUND -- VLAN was not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_FAULT -- Failed.
+ *   - LE_NOT_FOUND -- Interface not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetIPConfigParams
@@ -3118,8 +3111,8 @@ FUNCTION le_result_t GetIPConfigAddressParams
  * @instaging
  *
  * @return
- *   - LE_OK -- Succeeded.
- *   - LE_FAULT -- Failed.
+ *   - Interface reference if successful.
+ *   - NULL if failed or not found.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION Interface GetIPConfig

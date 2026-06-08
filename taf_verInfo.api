@@ -15,14 +15,12 @@
  *
  * <HR>
  *
- * The Version Information Service can be used to obtain version information (like TelAF)
- * of the software component that runs this service.
+ * The Version Information Service provides APIs to query software version strings and image
+ * hashes for various components (kernel, firmware, TrustZone, TelAF, rootFS, LXC).
  *
  * @section taf_verInfo_binding IPC interfaces binding
  *
  * The functions of this API are provided by the @b tafVerInfoSvc application service.
- *
- * The following example illustrates how to bind to TelAF version information service.
  *
  * @verbatim
    bindings:
@@ -31,197 +29,44 @@
    }
    @endverbatim
  *
- * @section taf_verInfo_GetKernelVersion Get the kernel version
+ * @section taf_verInfo_version_group Version query APIs
  *
- * - taf_verInfo_GetKernelVersion() -- Gets the kernel version appended with boot version of the
- * device.
- *
- * The following example illustrates how to get the kernel version along with boot version.
+ * These functions read the current version string of a software component into the caller-provided
+ * buffer.
  *
  * @code
-        char version[TAF_VERINFO_VERSION_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetKernelVersion(version, sizeof(version));
-        if(result == LE_OK)
-        {
-            LE_INFO("Kernel version : %s", version);
-        }
-        else
-        {
-            LE_ERROR("Get kernel version failed");
-        }
-   @endcode
- *
- * @section taf_verInfo_GetFirmwareVersion Get the firmware version
- *
- * - taf_verInfo_GetFirmwareVersion() -- Gets the firmware version of device.
- *
- * The following example illustrates how to get the firmware version
- *
- * @code
-        char version[TAF_VERINFO_VERSION_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetFirmwareVersion(version, sizeof(version));
-        if(result == LE_OK)
-        {
-            LE_INFO("Firmware version: %s", version);
-        }
-        else
-        {
-            LE_ERROR("Get firmware version failed");
-        }
-   @endcode
- *
- * @section taf_verInfo_GetTZVersion Get the TrustZone version
- *
- * - taf_verInfo_GetTZVersion() -- Gets the TZ version of device.
- *
- * The following example illustrates how to get the TZ version of the device
- *
- * @code
-        char version[TAF_VERINFO_VERSION_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetTZVersion(version, sizeof(version));
-        if(result == LE_OK)
-        {
-            LE_INFO("TZ version: %s", version);
-        }
-        else
-        {
-            LE_ERROR("Get TZ version failed");
-        }
-   @endcode
- *
- * @section taf_verInfo_GetTelafVersion Get the TelAF version
- *
- * - taf_verInfo_GetTelAFVersion() -- Gets the TelAF version.
- *
- * The following example illustrates how to get the TelAF version.
- *
- * @code
-        char version[TAF_VERINFO_VERSION_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetTelAFVersion(version, sizeof(version));
-        if(result == LE_OK)
+        char version[TAF_VERINFO_VERSION_MAX_BYTES] = { 0 };
+        if (taf_verInfo_GetTelAFVersion(version, sizeof(version)) == LE_OK)
         {
             LE_INFO("TelAF version: %s", version);
         }
-        else
-        {
-            LE_ERROR("Get TelAF version failed");
-        }
    @endcode
  *
- * @section taf_verInfo_GetRootfsVersion Get the root file system version
+ * - taf_verInfo_GetKernelVersion() -- Gets the kernel version string.
+ * - taf_verInfo_GetFirmwareVersion() -- Gets the firmware version string.
+ * - taf_verInfo_GetTZVersion() -- Gets the TrustZone version string.
+ * - taf_verInfo_GetTelAFVersion() -- Gets the TelAF version string.
+ * - taf_verInfo_GetRootFSVersion() -- Gets the root file system version string.
+ * - taf_verInfo_GetLXCVersion() -- Gets the LXC version string (if supported on the target).
  *
- * - taf_verInfo_GetRootFSVersion() -- Gets the root file system version.
+ * @section taf_verInfo_hash_group Hash query APIs
  *
- * The following example illustrates how to get the root file system version.
+ * These functions return the hash bytes for a component image in the specified bank.
+ *
+ * - taf_verInfo_GetTelAFHash() -- Gets the TelAF image hash for the specified bank.
+ * - taf_verInfo_GetBootHash() -- Gets the boot image hash for the specified bank.
+ * - taf_verInfo_GetRootFSHash() -- Gets the rootFS image hash for the specified bank.
+ * - taf_verInfo_GetFirmwareHash() -- Gets the firmware image hash for the specified bank.
+ * - taf_verInfo_GetLXCHash() -- Gets the LXC image hash for the specified bank.
  *
  * @code
-        char version[TAF_VERINFO_VERSION_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetRootFSVersion(version, sizeof(version));
-        if(result == LE_OK)
+        uint8_t hash[TAF_VERINFO_HASH_MAX_BYTES] = { 0 };
+        size_t hashSize = sizeof(hash);
+        if (taf_verInfo_GetTelAFHash(TAF_VERINFO_BANK_A, hash, &hashSize) == LE_OK)
         {
-            LE_INFO("RootFS version: %s", version);
-        }
-        else
-        {
-            LE_ERROR("Get rootFS version failed");
+            LE_INFO("TelAF hash size: %zu", hashSize);
         }
    @endcode
- *
- * @section taf_verInfo_GetFirmwareHash Get the firmware hash
- *
- * - taf_verInfo_GetFirmwareHash() -- Gets the firmware hash of device.
- *
- * The following example illustrates how to get the firmware hash
- *
- * @code
-        char hash[TAF_VERINFO_HASH_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetFirmwareHash(hash, sizeof(hash));
-        if(result == LE_OK)
-        {
-            LE_INFO("Firmware hash: %s", hash);
-        }
-        else
-        {
-            LE_ERROR("Get Firmware hash failed");
-        }
-   @endcode
- *
- * @section taf_verInfo_GetTelafHash Get the TelAF hash
- *
- * - taf_verInfo_GetTelAFHash() -- Gets the TelAF hash.
- *
- * The following example illustrates how to get the TelAF hash.
- *
- * @code
-        uint8_t hash[TAF_VERINFO_HASH_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetTelAFHash(hash, sizeof(hash));
-        if(result == LE_OK)
-        {
-            LE_INFO("TelAF hash: %s", hash);
-        }
-        else
-        {
-            LE_ERROR("Get TelAF hash failed");
-        }
-   @endcode
- *
- * @section taf_verInfo_GetRootfsHash Get the root file system hash
- *
- * - taf_verInfo_GetRootFSHash() -- Gets the root file system hash.
- *
- * The following example illustrates how to get the root file system hash.
- *
- * @code
-        uint8_t hash[TAF_VERINFO_HASH_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetRootFSHash(hash, sizeof(hash));
-        if(result == LE_OK)
-        {
-            LE_INFO("RootFS hash: %s", hash);
-        }
-        else
-        {
-            LE_ERROR("Get rootFS hash failed");
-        }
-   @endcode
- *
- * @section taf_verInfo_GetBootHash Get the boot hash
- *
- * - taf_verInfo_GetBootHash() -- Gets the boot hash.
- *
- * The following example illustrates how to get the boot hash.
- *
- * @code
-        uint8_t hash[TAF_VERINFO_HASH_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetBootHash(hash, sizeof(hash));
-        if(result == LE_OK)
-        {
-            LE_INFO("Boot hash: %s", hash);
-        }
-        else
-        {
-            LE_ERROR("Get boot hash failed");
-        }
-   @endcode
- *
- * @section taf_verInfo_GetFirmwareHash Get the firmware hash
- *
- * - taf_verInfo_GetBootHash() -- Gets the firmware hash.
- *
- * The following example illustrates how to get the firmware hash.
- *
- * @code
-        uint8_t hash[TAF_VERINFO_HASH_MAX_BYTES];
-        le_result_t result = taf_verInfo_GetFirmwareHash(hash, sizeof(hash));
-        if(result == LE_OK)
-        {
-            LE_INFO("Firmware hash: %s", hash);
-        }
-        else
-        {
-            LE_ERROR("Get firmware hash failed");
-        }
-   @endcode
- *
  *
  * <HR>
  *
@@ -264,9 +109,9 @@ ENUM Bank
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve version.
+ *  - LE_BAD_PARAMETER -- Output buffer is invalid.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetKernelVersion
@@ -280,9 +125,9 @@ FUNCTION le_result_t GetKernelVersion
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve version.
+ *  - LE_BAD_PARAMETER -- Output buffer is invalid.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetFirmwareVersion
@@ -296,9 +141,9 @@ FUNCTION le_result_t GetFirmwareVersion
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve version.
+ *  - LE_BAD_PARAMETER -- Output buffer is invalid.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetTZVersion
@@ -312,9 +157,9 @@ FUNCTION le_result_t GetTZVersion
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve version.
+ *  - LE_BAD_PARAMETER -- Output buffer is invalid.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetTelAFVersion
@@ -328,9 +173,9 @@ FUNCTION le_result_t GetTelAFVersion
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve version.
+ *  - LE_BAD_PARAMETER -- Output buffer is invalid.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRootFSVersion
@@ -344,9 +189,10 @@ FUNCTION le_result_t GetRootFSVersion
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_UNSUPPORTED -- LXC version information is not available on the target.
+ *  - LE_FAULT -- Failed to retrieve version.
+ *  - LE_BAD_PARAMETER -- Output buffer is invalid.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLXCVersion
@@ -360,9 +206,10 @@ FUNCTION le_result_t GetLXCVersion
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve hash.
+ *  - LE_BAD_PARAMETER -- Bank is invalid, or output arguments are invalid.
+ *  - LE_UNSUPPORTED -- Requested bank is not available.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetTelAFHash
@@ -377,9 +224,10 @@ FUNCTION le_result_t GetTelAFHash
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve hash.
+ *  - LE_BAD_PARAMETER -- Bank is invalid, or output arguments are invalid.
+ *  - LE_UNSUPPORTED -- Hash plug-in is not loaded.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetBootHash
@@ -394,9 +242,10 @@ FUNCTION le_result_t GetBootHash
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve hash.
+ *  - LE_BAD_PARAMETER -- Bank is invalid, or output arguments are invalid.
+ *  - LE_UNSUPPORTED -- Hash plug-in is not loaded.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRootFSHash
@@ -411,9 +260,10 @@ FUNCTION le_result_t GetRootFSHash
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve hash.
+ *  - LE_BAD_PARAMETER -- Bank is invalid, or output arguments are invalid.
+ *  - LE_UNSUPPORTED -- Hash plug-in is not loaded.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetFirmwareHash
@@ -428,9 +278,10 @@ FUNCTION le_result_t GetFirmwareHash
  *
  * @instaging
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_FAULT -- Failed.
  *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed to retrieve hash.
+ *  - LE_BAD_PARAMETER -- Bank is invalid, or output arguments are invalid.
+ *  - LE_UNSUPPORTED -- LXC is not supported on the target, or requested bank is not available.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLXCHash

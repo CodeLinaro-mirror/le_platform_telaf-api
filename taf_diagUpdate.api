@@ -190,7 +190,7 @@
             xferExitMsgHandler, NULL );
    @endcode
  *
- * An application can send a transfer exit response by using taf_diagUpdate_SendXferDataResp().
+ * An application can send a transfer exit response by using taf_diagUpdate_SendXferExitResp().
  *
  * @code
    result = taf_diagUpdate_SendXferExitResp( rxMsgRef, TAF_DIAGUPDATE_XFER_EXIT_NO_ERROR, NULL, 0 );
@@ -207,6 +207,54 @@
  * - taf_diagUpdate_RemoveRxXferExitMsgHandler() -- Removes a handler function for the specified event.
  * - taf_diagUpdate_GetXferExitParamRec() -- Gets the transfer request parameter record.
  * - taf_diagUpdate_SendXferExitResp() -- Sends a response message for the transfer exit message.
+ *
+ * @section c_taf_diag_update_request_download Request download
+ *
+ * An application registers a request download handler using taf_diagUpdate_AddRxDwnldMsgHandler().
+ * Once a request download message is received, the handler is called with the message reference
+ * passed as an input parameter.
+ *
+ * @code
+   // Rx message handler function.
+   void RxReqDwnldEventHandler
+   (
+       taf_diagUpdate_RxDwnldMsgRef_t rxMsgRef,
+       void* contextPtr
+   )
+   {
+       // Process after succesfully receiving message
+   }
+
+   // Register the message handler.
+   taf_diagUpdate_RxDwnldMsgHandlerRef_t RxReqDwnldMsgHandlerRef =
+       taf_diagUpdate_AddRxDwnldMsgHandler(diagUpdateSvcRef,
+          (taf_diagUpdate_RxDwnldMsgHandlerFunc_t)RxReqDwnldEventHandler, NULL);
+   LE_ASSERT(RxReqDwnldMsgHandlerRef != NULL);
+
+   // To remove the handler function, when it is not needed.
+   taf_diagUpdate_RemoveRxDwnldMsgHandler(RxReqDwnldMsgHandlerRef);
+   @endcode
+ *
+ * The following APIs are provided for request download.
+ *
+ * - taf_diagUpdate_GetReqDwnldDataFormatID() -- Gets the data format ID.
+ * - taf_diagUpdate_GetMemAddrParamLen() -- Gets the length (number of bytes) of the
+ *   memoryAddress parameter.
+ * - taf_diagUpdate_GetMemAddr() -- Gets the memory address.
+ * - taf_diagUpdate_GetMemSizeParamLen() -- Gets the length (number of bytes) of the
+ *   memorySize parameter.
+ * - taf_diagUpdate_GetMemSize() -- Gets the memory size.
+ *
+ * An application can send a request download response by using taf_diagUpdate_SendReqDwnldResp().
+ *
+ * @code
+   result = taf_diagUpdate_SendReqDwnldResp( rxMsgRef, TAF_DIAGUPDATE_REQ_DWNLD_NO_ERROR);
+   if (result != LE_OK)
+   {
+        LE_ERROR("Fail to send response.");
+        return result;
+   }
+   @endcode
  *
  * @section c_taf_diag_update_NRC_status_API NRC status notification API
  *
@@ -299,6 +347,20 @@ DEFINE FILE_SIZE_OR_DIR_INFO_LEN = 4;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * The maximum length of the memory size.
+ */
+//--------------------------------------------------------------------------------------------------
+DEFINE MAX_MEM_SIZE = 15;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The maximum length of the memory address.
+ */
+//--------------------------------------------------------------------------------------------------
+DEFINE MAX_MEM_ADDR_LENGTH = 15;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Request file transfer mode of operationType.
  */
 //--------------------------------------------------------------------------------------------------
@@ -360,6 +422,21 @@ ENUM XferExitErrorCode
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Error code for RequestDownload.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM ReqDwnldErrorCode
+{
+    REQ_DWNLD_NO_ERROR = 0,                         ///< Success.
+    REQ_DWNLD_BUSY_REPEAT_REQ = 0x21,               ///< Busy repeat request.
+    REQ_DWNLD_CONDITIONS_NOT_CORRECT = 0x22,        ///< Condition is not correct.
+    REQ_DWNLD_REQUEST_SEQUENCE_ERROR = 0x24,        ///< Request sequence error.
+    REQ_DWNLD_REQUEST_OUT_OF_RANGE = 0x31,          ///< Request out of range.
+    REQ_DWNLD_UPLOAD_DOWNLOAD_NOT_ACCEPTED = 0x70   ///< Operation is not accepted.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Reference to the update service.
  */
 //--------------------------------------------------------------------------------------------------
@@ -400,6 +477,13 @@ REFERENCE RxXferExitMsg;
  */
 //-------------------------------------------------------------------------------------------------
 REFERENCE NrcStatus;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Reference to the RequestDownload received message.
+ */
+//-------------------------------------------------------------------------------------------------
+REFERENCE RxDwnldMsg;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -862,3 +946,150 @@ FUNCTION le_result_t ReleaseNrcStatusMsg
 (
     NrcStatus statusRef  IN    ///< Tester state reference.
 ) = 26;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Handler for a RequestDownload message.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+HANDLER RxDwnldMsgHandler
+(
+    RxDwnldMsg rxMsgRef IN    ///< Received message reference.
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This event provides information on a RequestDownload message.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+EVENT RxDwnldMsg
+(
+    Service svcRef IN,           ///< Service reference.
+    RxDwnldMsgHandler handler    ///< Received message handler.
+) = (27,28);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the data format ID of the Rx RequestDownload message.
+ *
+ * @instaging
+ *
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid rxMsgRef.
+ *     - LE_NOT_FOUND -- Reference not found.
+ *
+ * @b NOTE: The process exits if an invalid reference is passed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetReqDwnldDataFormatID
+(
+    RxDwnldMsg rxMsgRef  IN,    ///< Receive message reference.
+    uint8 dataFormatID   OUT    ///< Data format ID.
+) = 29;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the length (number of bytes) of the memoryAddress parameter.
+ *
+ * @instaging
+ *
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid rxMsgRef.
+ *     - LE_NOT_FOUND -- Reference not found.
+ *
+ * @b NOTE: The process exits if an invalid reference is passed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetMemAddrParamLen
+(
+    RxDwnldMsg rxMsgRef  IN,      ///< Receive message reference.
+    uint8 memAddrParamLen  OUT    ///< Memory address parameter length (number of bytes).
+) = 30;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the memory address.
+ *
+ * @instaging
+ *
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid rxMsgRef.
+ *
+ * @b NOTE: The process exits if an invalid reference is passed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetMemAddr
+(
+    RxDwnldMsg rxMsgRef  IN,                 ///< Receive message reference.
+    uint8 memAddr[MAX_MEM_ADDR_LENGTH]  OUT  ///< Memory address.
+) = 31;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the length (number of bytes) of the memorySize parameter.
+ *
+ * @instaging
+ *
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid rxMsgRef.
+ *     - LE_NOT_FOUND -- Reference not found.
+ *
+ * @b NOTE: The process exits if an invalid reference is passed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetMemSizeParamLen
+(
+    RxDwnldMsg rxMsgRef  IN,       ///< Receive message reference.
+    uint8 memSizeParamLen  OUT     ///< Memory size parameter length (number of bytes).
+) = 32;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the memory size.
+ *
+ * @instaging
+ *
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid rxMsgRef.
+ *
+ * @b NOTE: The process exits if an invalid reference is passed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetMemSize
+(
+    RxDwnldMsg rxMsgRef  IN,            ///< Receive message reference.
+    uint8 memSize[MAX_MEM_SIZE]  OUT    ///< Memory size.
+) = 33;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sends a response message for the Rx RequestDownload message.
+ *
+ * @b NOTE: This function must be called to send a response
+ *       if receiving a RequestDownload message.
+ *
+ * @instaging
+ *
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid rxMsgRef.
+ *     - LE_NOT_FOUND -- Reference not found.
+ *     - LE_FAULT -- Failed.
+ *
+ * @b NOTE: The process exits if an invalid reference is passed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SendReqDwnldResp
+(
+    RxDwnldMsg rxMsgRef  IN,       ///< Received message reference.
+    ReqDwnldErrorCode errCode  IN  ///< Error code type.
+) = 34;

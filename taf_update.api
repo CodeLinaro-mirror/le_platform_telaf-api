@@ -44,112 +44,74 @@
  *
  * <HR>
  *
- * The Update Service APIs are designed for over-the-air (OTA) solutions. The OTA package is encapsulated
- * with a QOTA header, which can be uploaded to the cloud server and downloaded to the target device.
- * In a QOTA header, the package can be marked as firmware or application bundle. The Update Service
- * supports installing firmware and applications and it parses the bundle when the OTA package is
- * downloaded on the target device. Users can register a handler to get detailed update progress.
+ * The Update Service supports OTA firmware (FOTA) and application (SOTA) updates using QOTA
+ * packages. Register a state handler to receive asynchronous update progress.
  *
- * @b NOTE: Currently update service does not support firmware and application updates at the same
- *          time. Users should install the OTA package after it's downloaded successfully.
+ * @b NOTE: Firmware and application updates cannot run simultaneously.
  *
  * @section taf_update_binding IPC interfaces binding
  *
  * The functions of this API are provided by the @b tafUpdateSvc service.
  *
- * The following example illustrates how to bind to the Update Service.
  * @verbatim
- *
    bindings:
    {
        clientExe.clientComponent.taf_update -> tafUpdateSvc.taf_update
    }
- *
    @endverbatim
  *
  * @section c_taf_update_ota_function OTA functions
  *
- * - taf_update_Download() -- Downloads a package from a cloud server.
- *
- * - taf_update_Install() -- Installs firmware or application on the target device.
- *
- * - taf_update_AddStateHandler() / taf_update_RemoveStateHandler() -- Adds/removes an update states handler.
- *
- *
- * The following example illustrates registering a handler for updated states.
- *
- * Use taf_update_AddStateHandler() to register the handler as a callback for update state and handle
- * the different state when an indication arrives.
+ * - taf_update_Download() / taf_update_GetDownloadSession() / taf_update_StartDownload() /
+ *   taf_update_PauseDownload() / taf_update_ResumeDownload() / taf_update_CancelDownload() --
+ *   Download APIs: Download() starts the legacy download flow; the others acquire and manage a
+ *   session-based download.
+ * - taf_update_GetInstallationSession() / taf_update_Install() / taf_update_StartInstall() /
+ *   taf_update_PauseInstall() / taf_update_ResumeInstall() / taf_update_CancelInstall() --
+ *   Installation APIs: GetInstallationSession() obtains a session for the given package type;
+ *   Install() queues the install using the legacy flow; the others control a session-based install.
+ * - taf_update_InstallPreCheck() / taf_update_InstallPostCheck() -- Optional pre/post-install
+ *   checks. These APIs are optional and may be skipped if not required.
+ * - taf_update_EraseBank() -- Erases the inactive bank before flashing to ensure a clean target
+ *   bank. Call this separately before starting installation if needed.
+ * - taf_update_GetActiveBank() / taf_update_VerifyActivation() / taf_update_PauseActivation() /
+ *   taf_update_ResumeActivation() -- Query the active bank and control the activation workflow.
+ * - taf_update_Sync() / taf_update_StartSync() / taf_update_PauseSync() /
+ *   taf_update_ResumeSync() / taf_update_CancelSync() -- Manages A/B bank synchronization.
+ * - taf_update_Rollback() -- Starts rollback.
+ * - taf_update_AddStateHandler() / taf_update_RemoveStateHandler() -- Registers/Unregisters update
+ *   state handler.
  *
  * @code
- *
    void UpdateStateHandler(taf_update_StateInd_t* indication, void* contextPtr)
    {
        switch (indication->state) {
            case TAF_UPDATE_IDLE:
-
-               // Check download consent from user.
-
-               // Start to download.
                taf_update_Download();
-
                break;
            case TAF_UPDATE_DOWNLOADING:
-
-               // Show download progress.
-               LE_INFO("Downloading %d%% .", indication->percent);
-
+               LE_INFO("Downloading %d%%.", indication->percent);
                break;
            case TAF_UPDATE_DOWNLOAD_FAIL:
-
-               LE_ERROR("Download fail.");
-
+               LE_ERROR("Download failed.");
                break;
            case TAF_UPDATE_DOWNLOAD_SUCCESS:
-
-               // Check install consent from user.
-
-               // Start to install.
                if (indication->ota == TAF_UPDATE_PACKAGE_FOTA) {
-
-                   LE_INFO("Install firmware.");
-
-                   LE_ASSERT(taf_update_Install(TAF_UPDATE_FOTA, indication->name) == LE_OK);
-
+                   taf_update_Install(TAF_UPDATE_FOTA, indication->name);
                } else {
-
-                   LE_INFO("Install application.");
-
-                   // Show app name.
-                   if (indication->name != NULL) {
-                       LE_INFO("App name is %s", indication->name);
-                       LE_ASSERT(taf_update_Install(TAF_UPDATE_SOTA, indication->name) == LE_OK);
-                   }
+                   taf_update_Install(TAF_UPDATE_SOTA, indication->name);
                }
                break;
            case TAF_UPDATE_INSTALLING:
-
-               // Show install progress.
-               LE_INFO("Installing %d%% .", indication->percent);
-
+               LE_INFO("Installing %d%%.", indication->percent);
                break;
            case TAF_UPDATE_INSTALL_SUCCESS:
-
-               // Reboot to active for firmware upgrade or start app probation.
-
-               break;
-           case TAF_UPDATE_PROBATION:
-
-               // Do not perform any OTA operations during probation.
-
+               // Reboot to activate firmware, or start app probation.
                break;
         }
    }
 
-   // Register handler for update state.
    handlerRef = taf_update_AddStateHandler((taf_update_StateHandlerFunc_t)UpdateStateHandler, NULL);
-   LE_ASSERT(handlerRef != NULL);
- *
    @endcode
  *
  * <HR>
@@ -196,30 +158,27 @@ REFERENCE Session;
 //--------------------------------------------------------------------------------------------------
 ENUM State
 {
-    IDLE,              ///< Idle state; user can download OTA packages.
-    DOWNLOADING,       ///< Downloading state, user can query download progress.
-    DOWNLOAD_PAUSED,   ///< Download paused state, not supported.
-    DOWNLOAD_SUCCESS,  ///< Download success state, OTA package downloaded successfully.
-    DOWNLOAD_FAIL,     ///< Download fail state, user can retry the download.
-    INSTALLING,        ///< Installing state, user can query installation progress.
-    INSTALL_PAUSED,    ///< Install paused state.
-    INSTALL_SUCCESS,   ///< Install success state, user can reboot to active if firmware installed
-                       ///< or start probation if app installed.
-    INSTALL_FAIL,      ///< Install fail state, update service drives to idle state later.
-    PROBATION,         ///< Probation state, during probation, update service checks if newly installed
-                       ///< firmware or app is stable and drives to idle state later.
-    PROBATION_PAUSED,  ///< Probation is paused.
-    PROBATION_SUCCESS, ///< Probation success state, application or firmware is working properly
-                       ///< without errors.
-    PROBATION_FAIL,    ///< Probation fail state, update service drives to idle state later.
-    ROLLBACK,          ///< Rollback state, rollback to the original system.
-    ROLLBACK_SUCCESS,  ///< Rollback success state, rollback to the original system succeeded.
-    ROLLBACK_FAIL,     ///< Rollback fail state, rollback to the original system failed.
-    SYNCHRONIZING,     ///< Bank synchronization is ongoing.
-    SYNC_SUCCESS,      ///< Bank synchronization is successful.
-    SYNC_PAUSED,       ///< Bank synchronization is paused.
-    SYNC_FAIL,         ///< Bank synchronization is failed.
-    REPORTING          ///< Reporting state, update service is reporting state to server.
+    IDLE,              ///< Idle; ready to download.
+    DOWNLOADING,       ///< Download in progress.
+    DOWNLOAD_PAUSED,   ///< Download paused.
+    DOWNLOAD_SUCCESS,  ///< Download completed successfully.
+    DOWNLOAD_FAIL,     ///< Download failed.
+    INSTALLING,        ///< Installation in progress.
+    INSTALL_PAUSED,    ///< Installation paused.
+    INSTALL_SUCCESS,   ///< Installation completed; reboot or start probation.
+    INSTALL_FAIL,      ///< Installation failed.
+    PROBATION,         ///< Probation in progress.
+    PROBATION_PAUSED,  ///< Probation paused.
+    PROBATION_SUCCESS, ///< Probation passed.
+    PROBATION_FAIL,    ///< Probation failed.
+    ROLLBACK,          ///< Rollback in progress.
+    ROLLBACK_SUCCESS,  ///< Rollback succeeded.
+    ROLLBACK_FAIL,     ///< Rollback failed.
+    SYNCHRONIZING,     ///< Bank synchronization in progress.
+    SYNC_SUCCESS,      ///< Bank synchronization succeeded.
+    SYNC_PAUSED,       ///< Bank synchronization paused.
+    SYNC_FAIL,         ///< Bank synchronization failed.
+    REPORTING          ///< Reporting state to server.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -234,14 +193,14 @@ ENUM Error
     INTERNAL_ERROR,    ///< Internal error.
     SECURITY_FAILURE,  ///< Security check failure.
     PACKAGE_NOT_FOUND, ///< Package not found.
-    APP_NOT_RUNNING,   ///< App is not in running state.
-    INVALID_OPERATION, ///< Invalid operation requested.
-    IMAGE_NOT_VERFIED, ///< Image not verifed.
-    IO_ERROR,          ///< Input/output error.
-    NO_MEM_ERROR,      ///< Out of memory error.
-    INVAL_ARG_ERROR,   ///< Invalid argument error.
-    BUSY_ERROR,        ///< Device or resource is busy.
-    NODEV_ERROR        ///< No such device or resource exists.
+    APP_NOT_RUNNING,   ///< App is not running.
+    INVALID_OPERATION, ///< Invalid operation.
+    IMAGE_NOT_VERFIED, ///< Image not verified.
+    IO_ERROR,          ///< I/O error.
+    NO_MEM_ERROR,      ///< Out of memory.
+    INVAL_ARG_ERROR,   ///< Invalid argument.
+    BUSY_ERROR,        ///< Device or resource busy.
+    NODEV_ERROR        ///< No such device or resource.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -251,9 +210,9 @@ ENUM Error
 //--------------------------------------------------------------------------------------------------
 ENUM OTA
 {
-    FOTA,    ///< Firmware update workflow.
-    SOTA,    ///< Application update workflow.
-    NON_QOTA ///< Not QOTA workflow.
+    FOTA,    ///< Firmware update.
+    SOTA,    ///< Application update.
+    NON_QOTA ///< Not a QOTA workflow.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -266,7 +225,7 @@ ENUM PackageType
     PACKAGE_TYPE_QOTA_PACKAGE, ///< Package with QOTA header.
     PACKAGE_TYPE_NAD_ZIP,      ///< Zip file for NAD update.
     PACKAGE_TYPE_TELAF_APP,    ///< TelAF app bundle.
-    PACKAGE_TYPE_UAPI_PACKAGE, ///< Package for UA Plug-In update.
+    PACKAGE_TYPE_UAPI_PACKAGE, ///< Package for UA plug-in update.
     PACKAGE_TYPE_UNKNOWN       ///< Unknown package.
 };
 
@@ -277,28 +236,28 @@ ENUM PackageType
 //--------------------------------------------------------------------------------------------------
 ENUM Bank
 {
-    BANK_A,      ///< Bank A in dual system.
-    BANK_B,      ///< Bank B in dual system.
+    BANK_A,      ///< Bank A.
+    BANK_B,      ///< Bank B.
     BANK_UNKNOWN ///< Unknown bank.
 };
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Update state indication structure.
+ * Update state indication.
  */
 //--------------------------------------------------------------------------------------------------
 STRUCT StateInd
 {
     State state;                   ///< Update state.
-    Error error;                   ///< Error in update progress.
-    uint32 percent;                ///< Percentage of progress.
+    Error error;                   ///< Error code.
+    uint32 percent;                ///< Progress percentage.
     OTA ota;                       ///< OTA workflow.
     string name[SESSION_NAME_LEN]; ///< Session name.
 };
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Handler for update state.
+ * Handler for update state changes.
  *
  * @param[in] stateInd   Update state indication.
  * @param[in] contextPtr Context pointer.
@@ -323,8 +282,7 @@ EVENT State
 /**
  * Downloads an OTA package from a cloud server.
  *
- * @b NOTE: Update service will parse the download package and remove the QOTA header once the download
-         is complete.
+ * @b NOTE: The QOTA header is removed after download completes.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION Download
@@ -335,11 +293,13 @@ FUNCTION Download
 /**
  * Installs an OTA package on the target device.
  *
- * @b NOTE: QOTA header should be removed before calling this API.
+ * @b NOTE: QOTA header must be removed before calling this API.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Install request queued successfully.
+ * - LE_BAD_PARAMETER -- Invalid pkgPath for application install.
+ * - LE_FAULT -- Installation session not found.
+ * - LE_UNSUPPORTED -- OTA/session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t Install
@@ -350,11 +310,13 @@ FUNCTION le_result_t Install
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Gets download session.
+ * Gets a download session.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Download session reference returned successfully.
+ * - LE_BAD_PARAMETER -- session is null.
+ * - LE_FAULT -- Lower-layer failure.
+ * - LE_UNSUPPORTED -- Download agent unavailable or session creation not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetDownloadSession
@@ -368,8 +330,9 @@ FUNCTION le_result_t GetDownloadSession
  * Starts download.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Request queued successfully.
+ * - LE_FAULT -- Invalid session or wrong workflow state.
+ * - LE_UNSUPPORTED -- Operation not supported for this session type.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t StartDownload
@@ -382,8 +345,9 @@ FUNCTION le_result_t StartDownload
  * Pauses download.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Request queued successfully.
+ * - LE_FAULT -- Invalid session or wrong workflow state.
+ * - LE_UNSUPPORTED -- Operation not supported for this session type.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t PauseDownload
@@ -396,8 +360,9 @@ FUNCTION le_result_t PauseDownload
  * Resumes download.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Request queued successfully.
+ * - LE_FAULT -- Invalid session or wrong workflow state.
+ * - LE_UNSUPPORTED -- Operation not supported for this session type.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t ResumeDownload
@@ -410,8 +375,9 @@ FUNCTION le_result_t ResumeDownload
  * Cancels download.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Request queued successfully.
+ * - LE_FAULT -- Invalid session or wrong workflow state.
+ * - LE_UNSUPPORTED -- Operation not supported for this session type.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t CancelDownload
@@ -421,16 +387,18 @@ FUNCTION le_result_t CancelDownload
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Gets installation session.
+ * Gets an installation session.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Installation session reference returned successfully.
+ * - LE_BAD_PARAMETER -- session is null.
+ * - LE_FAULT -- Lower-layer failure.
+ * - LE_UNSUPPORTED -- Package type not supported or update agent unavailable.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetInstallationSession
 (
-    PackageType pkgType IN,           ///< Package type for installation.
+    PackageType pkgType IN,           ///< Package type.
     string cfgFile[FILE_PATH_LEN] IN, ///< Configuration file for installation session.
     Session session OUT               ///< Installation session reference.
 ) = 9;
@@ -440,8 +408,9 @@ FUNCTION le_result_t GetInstallationSession
  * Checks prerequisites for installation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Pre-check passed or skipped (no manifest).
+ * - LE_FAULT -- Invalid session or pre-check failed.
+ * - LE_UNSUPPORTED -- Pre-check not supported for this session type.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t InstallPreCheck
@@ -452,11 +421,13 @@ FUNCTION le_result_t InstallPreCheck
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Start installation.
+ * Starts installation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Install request queued successfully.
+ * - LE_BAD_PARAMETER -- Invalid pkgPath for application install.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t StartInstall
@@ -467,11 +438,12 @@ FUNCTION le_result_t StartInstall
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Pause installation.
+ * Pauses installation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Request accepted successfully.
+ * - LE_FAULT -- Invalid session or wrong workflow state.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t PauseInstall
@@ -481,11 +453,12 @@ FUNCTION le_result_t PauseInstall
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Resume installation.
+ * Resumes installation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t ResumeInstall
@@ -495,11 +468,12 @@ FUNCTION le_result_t ResumeInstall
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Cancel installation.
+ * Cancels installation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Cancel request accepted successfully.
+ * - LE_FAULT -- Invalid session or wrong workflow state.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t CancelInstall
@@ -509,11 +483,12 @@ FUNCTION le_result_t CancelInstall
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Verification post installation, check if flashing properly on inactive bank.
+ * Verifies that the inactive bank was flashed correctly after installation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Post-check request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t InstallPostCheck
@@ -526,8 +501,10 @@ FUNCTION le_result_t InstallPostCheck
  * Gets the active bank.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Active bank returned successfully.
+ * - LE_BAD_PARAMETER -- bank is null.
+ * - LE_FAULT -- Invalid session or failed to get active bank.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetActiveBank
@@ -540,27 +517,28 @@ FUNCTION le_result_t GetActiveBank
 /**
  * Erases a bank.
  *
- * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
- * - LE_UNSUPPORTED -- Unsupported.
- *
  * @b NOTE: The SBL partition will not be erased.
+ *
+ * @return
+ * - LE_OK -- Bank erased successfully.
+ * - LE_FAULT -- Invalid session or erase failed.
+ * - LE_UNSUPPORTED -- Session type not supported, or bank is the active bank.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t EraseBank
 (
     Session session IN, ///< Installation session reference.
-    Bank bank IN        ///< The bank to be erased.
+    Bank bank IN        ///< The bank to erase.
 ) = 17;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Activation verification, check if each component has the updated version.
+ * Verifies that each component has the updated version after activation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Verification request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t VerifyActivation
@@ -574,8 +552,9 @@ FUNCTION le_result_t VerifyActivation
  * Pauses activation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Pause request accepted successfully.
+ * - LE_FAULT -- Invalid session or wrong activation state.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t PauseActivation
@@ -588,8 +567,9 @@ FUNCTION le_result_t PauseActivation
  * Resumes activation.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Resume request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t ResumeActivation
@@ -599,11 +579,12 @@ FUNCTION le_result_t ResumeActivation
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Rollback to previous configurations to keep pesistency.
+ * Rolls back to the previous configuration.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Rollback request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t Rollback
@@ -613,11 +594,12 @@ FUNCTION le_result_t Rollback
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Bank synchronization.
+ * Starts A/B bank synchronization.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Sync request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t Sync
@@ -627,11 +609,12 @@ FUNCTION le_result_t Sync
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Starts AB sync.
+ * Starts A/B sync.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t StartSync
@@ -641,11 +624,12 @@ FUNCTION le_result_t StartSync
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Pauses AB sync.
+ * Pauses A/B sync.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Pause request accepted successfully.
+ * - LE_FAULT -- Invalid session or wrong sync state.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t PauseSync
@@ -655,11 +639,12 @@ FUNCTION le_result_t PauseSync
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Resumes AB sync.
+ * Resumes A/B sync.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Resume request queued successfully.
+ * - LE_FAULT -- Invalid session.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t ResumeSync
@@ -669,11 +654,12 @@ FUNCTION le_result_t ResumeSync
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Cancels AB sync.
+ * Cancels A/B sync.
  *
  * @return
- * - LE_FAULT -- Failed.
- * - LE_OK -- Succeeded.
+ * - LE_OK -- Cancel request accepted successfully.
+ * - LE_FAULT -- Invalid session or wrong sync state.
+ * - LE_UNSUPPORTED -- Session type not supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t CancelSync

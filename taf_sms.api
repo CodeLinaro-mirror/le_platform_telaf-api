@@ -92,7 +92,7 @@
  *
  * - taf_sms_SetPDU() -- Sets the message with PDU format.
  *
- * The following example illustrates creating, setting up, and deleting a message object.
+ * The following example illustrates creating, setting up, and deleting a text message object.
  *
  * @code
 
@@ -123,6 +123,46 @@
     else
     {
         LE_ERROR("tmpMsg is NULL");
+    }
+
+ * @endcode
+ *
+ * The following example illustrates setting and reading UCS-2 content. Each uint16_t element is
+ * the UCS-2 code unit value. For example, 0x8FD9 represents Unicode code point U+8FD9. In the
+ * SMS TP-User-Data, this value is represented by protocol bytes 0x8F followed by 0xD9.
+ *
+ * @code
+
+    // UCS-2 code units for the text with Unicode code points:
+    // U+8FD9 U+662F U+4E00 U+6761 U+6D4B U+8BD5 U+6D88 U+606F
+    // Hex literal case is not significant: 0x8FD9 and 0x8fd9 are the same value.
+    uint16_t ucs2Msg[] =
+    {
+        0x8FD9, 0x662F, 0x4E00, 0x6761,
+        0x6D4B, 0x8BD5, 0x6D88, 0x606F
+    };
+
+    taf_sms_MsgRef_t msgRef = taf_sms_Create();
+    if (msgRef != NULL)
+    {
+        taf_sms_SetDestination(msgRef, "123456789");
+        taf_sms_SetUCS2(msgRef, ucs2Msg, sizeof(ucs2Msg) / sizeof(ucs2Msg[0]));
+        taf_sms_Send(msgRef);
+        taf_sms_Delete(msgRef);
+    }
+
+    // For a received UCS-2 message, taf_sms_GetUCS2() returns the same numeric values.
+    uint16_t rxUcs2[TAF_SMS_UCS2_CHARS] = {0};
+    size_t rxLen = TAF_SMS_UCS2_CHARS;
+    if (taf_sms_GetUCS2(rxMsgRef, rxUcs2, &rxLen) == LE_OK)
+    {
+        for (size_t i = 0; i < rxLen; i++)
+        {
+            // %04X prints uppercase hexadecimal, e.g. 8FD9.
+            // %04x prints lowercase hexadecimal, e.g. 8fd9.
+            // Both are only display formats for the same uint16_t value.
+            LE_INFO("UCS2[%zu] = 0x%04X", i, rxUcs2[i]);
+        }
     }
 
  * @endcode
@@ -677,6 +717,29 @@ FUNCTION le_result_t SetBinary
 /**
  * Sets the message's UCS2 content.
  *
+ * @param[in] ucs2  UCS-2 characters encoded as uint16 numeric code unit values.
+ *                  Each value corresponds to one UCS-2 character carried in the
+ *                  SMS TP-User-Data field. The use of UCS-2 encoding is indicated
+ *                  by the SMS Data Coding Scheme (TP-DCS) as specified in 3GPP
+ *                  TS 23.038, while the TP-DCS and TP-UD fields are defined in
+ *                  3GPP TS 23.040.
+ *                  For this API, each uint16 value is the UCS-2 code unit value:
+ *                      ucs2[i] = (high_byte << 8) | low_byte
+ *                  where high_byte is the first byte and low_byte is the second
+ *                  byte of that UCS-2 character in the SMS TP-User-Data.
+ *
+ *                  Callers should assign numeric uint16 values, for example
+ *                  0x8FD9 for U+8FD9. Do not construct the array by copying raw
+ *                  PDU bytes into uint16 memory, because uint16 memory layout is
+ *                  platform dependent.
+ *
+ *                  The API uses uint16 numeric values, not hexadecimal strings.
+ *                  Therefore hexadecimal letter case has no effect on the value:
+ *                  0x8FD9 and 0x8fd9 are identical in C. Documentation, logs, and
+ *                  examples normally print UCS-2 values in uppercase hexadecimal
+ *                  for readability, but callers may use either uppercase or
+ *                  lowercase hex literals when constructing the uint16 values.
+ *
  * @return
  * - LE_BAD_PARAMETER -- Invalid input.
  * - LE_NOT_FOUND -- Invalid message.
@@ -687,7 +750,8 @@ FUNCTION le_result_t SetBinary
 FUNCTION le_result_t SetUCS2
 (
     Msg     msgRef,              ///< Message reference.
-    uint16  ucs2[UCS2_CHARS] IN  ///< UCS2 message.
+    uint16  ucs2[UCS2_CHARS] IN  ///< UCS2 characters as uint16 code unit values:
+                                 ///< ucs2[i] = (high_byte << 8) | low_byte.
 ) = 15;
 
 //--------------------------------------------------------------------------------------------------
@@ -821,6 +885,29 @@ FUNCTION le_result_t GetBinary
 /**
  * Gets the message's UCS2 encoding.
  *
+ * @param[out] ucs2  Buffer to receive UCS-2 characters as uint16 numeric code unit
+ *                   values. Each value corresponds to one UCS-2 character carried in
+ *                   the SMS TP-User-Data field. The use of UCS-2 encoding is indicated
+ *                   by the SMS Data Coding Scheme (TP-DCS) as specified in 3GPP
+ *                   TS 23.038, while the TP-DCS and TP-UD fields are defined in
+ *                   3GPP TS 23.040.
+ *                   For this API, each uint16 value is the UCS-2 code unit value:
+ *                       ucs2[i] = (high_byte << 8) | low_byte
+ *                   where high_byte is the first byte and low_byte is the second
+ *                   byte of that UCS-2 character in the SMS TP-User-Data.
+ *
+ *                   The caller may decompose each returned value into its protocol
+ *                   bytes as:
+ *                       high_byte = ucs2[i] >> 8
+ *                       low_byte  = ucs2[i] & 0xFF
+ *
+ *                   The API returns uint16 numeric values, not hexadecimal strings.
+ *                   Hexadecimal letter case is only a display convention and has no
+ *                   effect on the value. For example, if the returned value is
+ *                   numeric 0x8FD9, printing it with %04X displays "8FD9", while
+ *                   printing it with %04x displays "8fd9". Both representations
+ *                   refer to the same uint16 value.
+ *
  * @return
  * - LE_NOT_FOUND -- Invalid message.
  * - LE_FAULT -- Invalid input string.
@@ -831,7 +918,8 @@ FUNCTION le_result_t GetBinary
 FUNCTION le_result_t GetUCS2
 (
     Msg     msgRef,               ///< Message reference.
-    uint16  ucs2[UCS2_CHARS] OUT  ///< Buffer to store UCS2 characters.
+    uint16  ucs2[UCS2_CHARS] OUT  ///< Buffer to receive UCS2 characters as uint16 code unit values:
+                                  ///< ucs2[i] = (high_byte << 8) | low_byte.
 ) = 24;
 
 //--------------------------------------------------------------------------------------------------

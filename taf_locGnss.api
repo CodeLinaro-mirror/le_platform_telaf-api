@@ -1211,6 +1211,61 @@
    taf_locGnss_RemoveDgnssStatusChangeHandler(DgnssStatusHandlerRef);
    @endverbatim
  *
+ * - taf_locGnss_InjectMerkleTreeInformationByPath() -- Injects the Merkle Tree information via an XML configuration file.
+ *
+ * The XML file configuration contains the Merkle root, Merkle nodes and information for up to two public keys.
+ *
+ * @verbatim
+   string filePath = "/etc/OSNMA_MerkleTree.xml";
+   if(taf_locGnss_InjectMerkleTreeInformationByPath(filePath) == LE_OK)
+   {
+     // Process after successfully injecting the Merkle data.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_ConfigureOsnma() -- Enables or disables the OSNMA feature in the modem.
+ *
+ * This API shall not be called when GNSS state is ACTIVE.
+ *
+ * @verbatim
+   bool osnma = true;
+   if(taf_locGnss_ConfigureOsnma(osnma) == LE_OK)
+   {
+     // Process after successfully enabling or disabling the OSNMA feature.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_GetBaselineLength() -- Gets the baseline length
+ *   calculated at the configured integrity risk from the position sample reference.
+ * @verbatim
+   double baselineLength;
+   if(taf_locGnss_GetBaselineLength(positionSampleRef, &baselineLength) == LE_OK)
+   {
+     // Process after successfully getting the baseline length.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_GetAgeOfCorrections() -- Triggered inside PositionHandlerFunction() function
+ *    to get the age of corrections from the position sample reference.
+ * @verbatim
+   uint64_t ageOfCorrections;
+   if(taf_locGnss_GetAgeOfCorrections(positionSampleRef, &ageOfCorrections) == LE_OK)
+   {
+     // Process after successfully getting the age of corrections.
+   }
+   @endverbatim
+ *
+ * - taf_locGnss_SetEngineIntegrityRisk() -- Configures the integrity risk
+ * level to be used by the specified GNSS modem engine for protection level
+ * calculation in the position report.
+ * @verbatim
+   taf_locGnss_EngineType_t  engineType;
+   uint32_t integrityRisk = 10;
+   if(taf_locGnss_SetEngineIntegrityRisk(engineType, integrityRisk)== LE_OK)
+   {
+     // Process after successfully setting the integration risk for the specific engine.
+   }
+   @endverbatim
  *
  * @subsection taf_locGnss_GetLeapSeconds Get leap seconds event information
  *
@@ -1257,6 +1312,8 @@
 
 API_VERSION = 1;
 SERVING_VERSION = 1;
+
+API_MSG_SIZE = 8256;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1362,6 +1419,13 @@ DEFINE NUMBER_OF_SIGNAL_TYPES_MAX = 23;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Defines the maximum number of characters for the Merkle Tree file path.
+ */
+//--------------------------------------------------------------------------------------------------
+DEFINE MERKLETREE_FILE_PATH_LEN_MAX = 256;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Define the maximum number of bytes for the injection correction data.
  */
 //--------------------------------------------------------------------------------------------------
@@ -1461,6 +1525,7 @@ STRUCT SvInfo
 {
     Constellation satConst;    ///< The constellation type in which this satellite vehicle belongs.
     bool satUsed;              ///< The flag to indicate whether the satellite is used in computing the fix.
+    bool satUsedDgnss;         ///< The flag to indicate whether the satellite is used in DGNSS correction.
     bool satTracked;           ///< The flag to indicate whether the satellite is used to track the vehicle. If it's tracked, the satSnr will hold valid value.
     uint8 satSnr;              ///< The signal-to-noise ratio of the signal measured at antenna of the satellite vehicle. Units: dB-Hz
     uint8 satElev;             ///< The satellite vehicle elevation angle. Units: Degrees. Range: 0 to 90.
@@ -3873,6 +3938,8 @@ FUNCTION le_result_t GetSVIds
  * Gets the satellite's vehicle information of a given constellation
  * per client session.
  *
+ * @instaging
+ *
  * @return
  *  - LE_OK             Succeeded.
  *  - LE_FAULT          Failed.
@@ -3880,6 +3947,9 @@ FUNCTION le_result_t GetSVIds
  *  - LE_OUT_OF_RANGE   The retrieved parameter is invalid.
  *  - LE_NO_MEMORY      The array length of svInfo is zero.
  *  - LE_OVERFLOW       The array length of svInfo is less than available SV of a constellation.
+ *
+ * @b NOTE: For DGNSS station IDs of type SBAS, taf_locGnss_GetSatellitesInfoEx() can be used.
+ *          Valid SBAS station ID ranges are 120–158 and 183–191.
  *
  * @b NOTE: If the caller passes an invalid position sample reference to this function,
  *       it is a fatal error and the client will be killed.
@@ -4652,3 +4722,165 @@ EVENT DgnssStatusChange
 (
     DgnssStatusChangeHandler handler
 ) = (103,104);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Injects the Merkle Tree information via an XML configuration file.
+ * The XML file configuration contains the Merkle root, Merkle nodes and information for up to two public keys.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_FAULT         Failed to inject the Merkle Tree information.
+ *  - LE_NOT_PERMITTED The Location service is not in the ready state.
+ *  - LE_BAD_PARAMETER Invalid parameter provided.
+ *  - LE_OK            Succeeded.
+ *
+*/
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t InjectMerkleTreeInformationByPath
+(
+    string merkleTreeFilePath[MERKLETREE_FILE_PATH_LEN_MAX] IN  ///< File path.
+) = 105;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enables or disables the OSNMA feature in the modem.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_FAULT         Failed to enable/disable the OSNMA feature.
+ *  - LE_NOT_PERMITTED The Location service is not in the ready state.
+ *  - LE_OK            Succeeded.
+ *
+*/
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t ConfigureOsnma
+(
+    bool galOsnma  IN     ///< Enable or disable Galileo OSNMA.
+) = 106;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Sets the integrity risk level to be used by the specified modem engine for protection level
+ * calculation in the position report.
+ *
+ * @b NOTE: If this API is not called for a particular engine, the engine will not calculate
+ *       protection levels and will not include them in its position report.
+ *
+ * @b NOTE: The valid range of the integrity risk is [1, 4e9 - 1], corresponding to an
+ *       actual probability range of [2.5e-10, 1 - 2.5e-10].
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *  - LE_NOT_PERMITTED  The Location service state is not ready or active.
+ *  - LE_NOT_SUPPORTED  Protection levels are not supported by the specified engine.
+ *  - LE_OUT_OF_RANGE   The integrityRisk parameter is outside the valid range.
+ *
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetEngineIntegrityRisk
+(
+    EngineType engtype IN,               ///< Engine type for which integrity risk is set.
+    uint32     integrityRisk IN          ///< The integrity risk is defined as a probability per
+                                         ///< epoch, in units of 2.5e-10.
+) = 107;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets the protection levels. Protection levels are calculated at the configured integrity risk
+ * and represent the bounds on the position error.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *
+ * @b NOTE: This API is valid only if integrity risk has been configured and is within
+ *       the valid range. If integrity risk is disabled, protection levels will not
+ *       be available and this API will return LE_FAULT.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetProtectionLevels
+(
+    Sample positionSampleRef IN,             ///< Position sample reference.
+    double protectionLevelAlongTrack  OUT,   ///< Along-track protection level, in unit of meter.
+    double protectionLevelCrossTrack OUT,    ///< Cross-track protection level, in unit of meter.
+    double protectionLevelVertical  OUT      ///< Vertical protection level, in unit of meter.
+) = 108;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets BaselineLength per client session.
+ * BaselineLength means the distance between the basestation and the receiver.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetBaselineLength
+(
+    Sample positionSampleRef IN,        ///< Position sample reference.
+    double baselineLength  OUT          ///< Baseline length, in unit of meter.
+) = 109;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets AgeOfCorrections per client session.
+ * Defines the time difference between the fix timestamp that uses the correction and
+ * the correction data timestamp.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetAgeOfCorrections
+(
+    Sample positionSampleRef IN,      ///< Position sample reference.
+    uint64 ageCorrections  OUT        ///< AgeOfCorrections, in unit of milliseconds.
+) = 110;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Gets IntegrityRiskUsed per client session. The returned value is applied in the computation
+ * of protection level parameters.
+ *
+ * @b NOTE: Valid range is [1, 4e9 - 1]. Values outside the valid range mean the integrity risk
+ * is disabled. When integrity risk is disabled, protection level parameters will not be available.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK             Succeeded.
+ *  - LE_FAULT          Failed.
+ *  - LE_OUT_OF_RANGE   The integrityRiskUsed parameter is outside the valid range.
+ *
+ * @b NOTE: If the caller passes a null pointer to this function, it is a fatal error
+ *       and the client will be killed.
+ */
+//------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetIntegrityRiskUsed
+(
+    Sample positionSampleRef IN,        ///< Position sample reference.
+    uint32 integrityRiskUsed  OUT       ///< Integrity risk used, in units of 2.5e-10.
+) = 111;

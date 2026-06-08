@@ -133,17 +133,19 @@
  *
  * @verbatim
 
-    void TestSensorOnEventFunc(taf_imuSensor_SensorRef_t sensorRef,taf_imuSensor_SampleRef_t ref,
-        void* contextPtr){
-        taf_imuSensor_DataValue_t rawData[TAF_SENSOR_MAX_SUPPORTED_BATCH_COUNT];
-        taf_imuSensor_DataValue_t biasData[TAF_SENSOR_MAX_SUPPORTED_BATCH_COUNT];
-        size_t  size = sizeof(rawData)/sizeof(taf_imuSensor_EventData_t);
-        le_result_t result = taf_imuSensor_GetRotatedData(ref,rawData,&size,biasData,&size);
-        result = taf_imuSensor_DeleteData(ref);
+    void TestSensorOnEventFunc(taf_imuSensor_SampleRef_t sampleRef,
+        const taf_imuSensor_DataValue_t* rawData,  size_t rawDataCount,
+        const taf_imuSensor_DataValue_t* biasData, size_t biasDataCount,
+        void* contextPtr)
+    {
+        // Use the data and then free server-side sample ref
+        result = taf_imuSensor_DeleteData(sampleRef);
     }
-
+    taf_imuSensor_SensorListRef_t listRef = taf_imuSensor_GetSensorList();
+    taf_imuSensor_SensorRef_t sensorRef = taf_imuSensor_GetFirstSensor(listRef);
     taf_sensor_DataHandlerRef_t eventHandlerRef;
-    eventHandlerRef = taf_imuSensor_AddDatatHandler(sensorRef,TestSensorOnEventFunc, NULL);
+    eventHandlerRef = taf_imuSensor_AddDataHandler(config->sensorRef,
+                                                         TestSensorOnEventFunc, sensorRef);
     taf_imuSensor_RemoveDataHandler(eventHandlerRef);
    @endverbatim
  *
@@ -177,6 +179,59 @@
     selfTestHandlerRef =
         taf_imuSensor_AddSelfTestFailedHandler(sensorRef,TestSensorFailedEvent,NULL);
     taf_imuSensor_RemoveSelfTestFailedHandler(selfTestHandlerRef);
+   @endverbatim
+ *
+ * @section taf_imuSensor_AddConfigUpdateHandler  Subscribe configuration update notifications
+ *
+ * TelAF Sensor Management Service provides APIs to receive notifications when the active sensor
+ * configuration changes. The client calls taf_imuSensor_AddConfigUpdateHandler() to register a
+ * callback that is triggered by the service whenever the sensor's sampling rate, batch count, or
+ * rotation setting is updated (e.g., after a successful taf_imuSensor_Activate() call). The
+ * handler receives the new sampling rate (Hz), batch count, and a flag indicating whether data
+ * rotation is active. The client must call taf_imuSensor_RemoveConfigUpdateHandler() to
+ * unregister the handler when notifications are no longer needed.
+ *
+ * @verbatim
+    void OnConfigUpdate(taf_imuSensor_SensorRef_t sensorRef,
+        double samplingRate, uint32_t batchCount, bool isRotated, void* contextPtr)
+    {
+        char sensorName[50];
+        taf_imuSensor_GetName(sensorRef, sensorName, sizeof(sensorName));
+        LE_INFO("ConfigUpdate for %s: rate=%.2f Hz, batch=%u, rotated=%d",
+                sensorName, samplingRate, batchCount, (int)isRotated);
+    }
+
+    taf_imuSensor_ConfigUpdateHandlerRef_t configUpdateHandlerRef;
+    configUpdateHandlerRef =
+        taf_imuSensor_AddConfigUpdateHandler(sensorRef, OnConfigUpdate, NULL);
+    taf_imuSensor_RemoveConfigUpdateHandler(configUpdateHandlerRef);
+   @endverbatim
+ *
+ * @section taf_imuSensor_AddCapabilityUpdateHandler  Subscribe capability update notifications
+ *
+ * TelAF Sensor Management Service provides APIs to receive notifications when the sensor
+ * capability status changes. The client calls taf_imuSensor_AddCapabilityUpdateHandler() to register a
+ * callback that is triggered by the service whenever the sensor's availability, enabled state, or
+ * capability bitmask are updated. If the underlying platform adaptor does not support capability
+ * notifications, the service immediately delivers a synthetic notification with the current
+ * sensor state upon handler registration. The client must call
+ * taf_imuSensor_RemoveCapabilityUpdateHandler() to unregister the handler when notifications are no
+ * longer needed.
+ *
+ * @verbatim
+    void OnCapabilityChange(taf_imuSensor_SensorRef_t sensorRef,
+        bool isAvailable, bool isEnabled, uint32_t capabilityMask, void* contextPtr)
+    {
+        char sensorName[50];
+        taf_imuSensor_GetName(sensorRef, sensorName, sizeof(sensorName));
+        LE_INFO("Capability for %s: available=%d, enabled=%d, mask=0x%08X",
+                sensorName, (int)isAvailable, (int)isEnabled, capabilityMask);
+    }
+
+    taf_imuSensor_CapabilityUpdateHandlerRef_t capabilityHandlerRef;
+    capabilityHandlerRef =
+        taf_imuSensor_AddCapabilityUpdateHandler(sensorRef, OnCapabilityChange, NULL);
+    taf_imuSensor_RemoveCapabilityUpdateHandler(capabilityHandlerRef);
    @endverbatim
  *
  * <HR>
@@ -320,8 +375,9 @@ FUNCTION Sensor GetNextSensor
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_FAULT          Failed.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetId
@@ -336,8 +392,9 @@ FUNCTION le_result_t GetId
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_FAULT          Failed.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetName
@@ -353,8 +410,9 @@ FUNCTION le_result_t GetName
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_FAULT          Failed.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetVendorName
@@ -369,8 +427,9 @@ FUNCTION le_result_t GetVendorName
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_FAULT          Failed.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetVersion
@@ -386,8 +445,9 @@ FUNCTION le_result_t GetVersion
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_FAULT          Failed.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetType
@@ -403,8 +463,9 @@ FUNCTION le_result_t GetType
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_FAULT          Failed.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetSupportedSamplingRate
@@ -420,8 +481,9 @@ FUNCTION le_result_t GetSupportedSamplingRate
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_FAULT          Failed.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetSupportedBatchCount
@@ -437,8 +499,9 @@ FUNCTION le_result_t GetSupportedBatchCount
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_FAULT          Failed.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRange
@@ -456,8 +519,9 @@ FUNCTION le_result_t GetRange
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_FAULT          Failed.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetResolution
@@ -510,8 +574,9 @@ FUNCTION le_result_t SetRefCoordinateByEulerAngle
  * @instaging
  * @return
  * - LE_UNSUPPORTED   Sampling rate or batch count not supported.
- * - LE_UNAVAILABLE   If sensor is activated.
- * - LE_FAULT         Failed.
+ * - LE_UNAVAILABLE   If sensor is in activate state.
+ * - LE_NOT_FOUND     Invalid client.
+ * - LE_FAULT         If client count reached the maximum limit / failed.
  * - LE_OK            Succeeded.
  */
 //------------------------------------------------------------------------------------------------
@@ -529,7 +594,9 @@ FUNCTION le_result_t Activate
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
+ * - LE_UNAVAILABLE   If sensor is in deactivate state.
+ * - LE_NOT_FOUND     Invalid client.
+ * - LE_FAULT         If client count reached the maximum limit / failed.
  * - LE_OK            Succeeded.
  */
 //------------------------------------------------------------------------------------------------
@@ -547,11 +614,9 @@ FUNCTION le_result_t Deactivate
  *
  * @instaging
  * @return
- * - LE_NOT_SUPPORTED Self test not supported by sensor.
- * - LE_UNAVAILABLE   Current self test request can not be performed and
-                      the previous test result is not available.
+ * - LE_NOT_FOUND     Invalid client.
  * - LE_BUSY          Cannot initiate self test as sensor busy.
- * - LE_TIMEOUT       Timeout while waiting for result.
+ * - LE_TIMEOUT       On timeout.
  * - LE_BAD_PARAMETER Self test mode not supported.
  * - LE_FAULT         Self test failed.
  * - LE_OK            Self test passed.
@@ -570,15 +635,17 @@ FUNCTION le_result_t SelfTest
  *
  * @instaging
  *
- * @param[in] sensorRef  Sensor reference.
  * @param[in] sampleRef  Reference for sensor sample.
+ * @param[in] RawData    The data of the events.
+ * @param[in] BiasData   The data of the events.
  * @param[in] contextPtr Context pointer.
  */
 //------------------------------------------------------------------------------------------------
 HANDLER DataHandler
 (
-    Sensor sensorRef                                   IN,   ///< Sensor reference.
-    Sample sampleRef                                   IN   ///< Reference for sensor sample.
+    Sample      sampleRef                              IN, ///< Reference for sensor sample.
+    DataValue   RawData[MAX_SUPPORTED_BATCH_COUNT]     IN, ///< The data of the events.
+    DataValue   BiasData[MAX_SUPPORTED_BATCH_COUNT]    IN  ///< The data of the events.
 );
 
 //------------------------------------------------------------------------------------------------
@@ -632,8 +699,9 @@ SelfTestFailedHandler handler         ///< Self test event handler
  *
  * @instaging
  * @return
- * - LE_FAULT         Failed.
- * - LE_OK            Succeeded.
+ * - LE_NOT_FOUND      Invalid sample reference.
+ * - LE_BAD_PARAMETER  Bad parameters.
+ * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRotatedData
@@ -664,7 +732,6 @@ FUNCTION le_result_t DeleteData
  *
  * @instaging
  * @return
- * - LE_BAD_PARAMETER  Bad parameters.
  * - LE_OK             Succeeded.
  */
 //------------------------------------------------------------------------------------------------
@@ -672,3 +739,71 @@ FUNCTION le_result_t ReleaseSelfTestRef
 (
     SelfTestEvent  eventRef                               IN   ///< Self test event reference.
 ) = 23;
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Handler for sensor configuration update notifications.
+ *
+ * @instaging
+ *
+ * @param[in] sensorRef    Sensor reference.
+ * @param[in] samplingRate The new sampling rate (Hz).
+ * @param[in] batchCount   The new batch count.
+ * @param[in] isRotated    Whether the sensor data is rotated.
+ * @param[in] contextPtr   Context pointer.
+ */
+//------------------------------------------------------------------------------------------------
+HANDLER ConfigUpdateHandler
+(
+    Sensor  sensorRef      IN,   ///< Sensor reference.
+    double  samplingRate   IN,   ///< The new sampling rate (Hz).
+    uint32  batchCount     IN,   ///< The new batch count.
+    bool    isRotated      IN    ///< Whether the sensor data is rotated.
+);
+
+//------------------------------------------------------------------------------------------------
+/**
+ * The sensor configuration update event.
+ *
+ * @instaging
+ */
+//------------------------------------------------------------------------------------------------
+EVENT ConfigUpdate
+(
+    Sensor              sensorRef,   ///< Sensor reference.
+    ConfigUpdateHandler handler      ///< The configuration update event handler.
+) = (24, 25);
+
+//------------------------------------------------------------------------------------------------
+/**
+ * Handler for sensor capability change notifications.
+ *
+ * @instaging
+ *
+ * @param[in] sensorRef      Sensor reference.
+ * @param[in] isAvailable    Whether the sensor is available.
+ * @param[in] isEnabled      Whether the sensor is enabled.
+ * @param[in] capabilityMask Bitmask of sensor capabilities.
+ * @param[in] contextPtr     Context pointer.
+ */
+//------------------------------------------------------------------------------------------------
+HANDLER CapabilityUpdateHandler
+(
+    Sensor  sensorRef       IN,   ///< Sensor reference.
+    bool    isAvailable     IN,   ///< Whether the sensor is available.
+    bool    isEnabled       IN,   ///< Whether the sensor is enabled.
+    uint32  capabilityMask  IN    ///< Bitmask of sensor capabilities.
+);
+
+//------------------------------------------------------------------------------------------------
+/**
+ * The sensor capability change event.
+ *
+ * @instaging
+ */
+//------------------------------------------------------------------------------------------------
+EVENT CapabilityUpdate
+(
+    Sensor                   sensorRef,   ///< Sensor reference.
+    CapabilityUpdateHandler  handler      ///< The capability change event handler.
+) = (26, 27);

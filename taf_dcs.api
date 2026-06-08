@@ -168,6 +168,35 @@
  * taf_dcs_DeleteProfile(profileReference);
  * @endverbatim
  *
+ * * @section c_taf_dcs_throughput Throughput information
+ *
+ * Data call service provides APIs to configure and monitor throughput information.
+ * An application can register a handler to receive throughput information changes using
+ * taf_dcs_AddThroughputInfoChangeHandler(). The handler will be called with the new
+ * throughput information indication when the throughput changes.
+ *
+ * @verbatim
+   throughputHandlerRef = taf_dcs_AddThroughputInfoChangeHandler(phoneId, ThroughputInfoHandlerFunc, NULL);
+   @endverbatim
+ *
+ * Throughput reporting can be enabled or disabled for a specific link direction and interval using
+ * taf_dcs_SetThroughputReport().
+ *
+ * To remove the handler, an application can use taf_dcs_RemoveThroughputInfoChangeHandler().
+ * To retrieve the latest throughput information, the application can use
+ * taf_dcs_GetLastThroughputInfoList() to get the list reference. Then use
+ * taf_dcs_GetThroughputInfoCount() and taf_dcs_GetThroughputInfo() to iterate through
+ * the information. After processing, the list must be deleted using
+ * taf_dcs_DeleteLastThroughputInfoList().
+ *
+ * Various properties of the throughput information can be retrieved using:
+ *
+ * - taf_dcs_GetThroughputApnName() -- Gets the throughput APN name.
+ * - taf_dcs_GetThroughputActualRate() -- Gets the throughput actual rate.
+ * - taf_dcs_GetThroughputAllowedRate() -- Gets the throughput allowed rate.
+ * - taf_dcs_GetThroughputQueueSize() -- Gets the throughput queue size.
+ * - taf_dcs_GetThroughputQuality() -- Gets the throughput quality.
+ *
  * <HR>
  *
  */
@@ -2145,3 +2174,317 @@ EVENT QosStatus
     Profile profileRef,      ///< The profile reference.
     QosStatusHandler handler ///< Handler for QOS flow status.
 ) = (66,67);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Link direction.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM LinkDirection
+{
+    LINK_DIRECTION_UNKNOWN = 0,
+    LINK_DIRECTION_UPLINK,
+    LINK_DIRECTION_DOWNLINK
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Throughput quality.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM ThroughputQuality
+{
+    THROUGHPUT_QUALITY_UNKNOWN = 0,
+    THROUGHPUT_QUALITY_BETTER,
+    THROUGHPUT_QUALITY_BEST
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The throughput information list reference.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+REFERENCE ThroughputInfoList;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The throughput information reference.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+REFERENCE ThroughputInfo;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The throughput information indication.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+STRUCT ThroughputInfoInd
+{
+    uint8 phoneId;                    ///< Phone ID.
+    uint32 profileId;                 ///< Profile ID.
+    string apnName[APN_NAME_MAX_LEN]; ///< APN name.
+    Pdp ipFamily;                     ///< IP family.
+    Tech techFamily;                  ///< Technology family.
+    uint32 actualUplinkRate;          ///< Actual uplink rate in KB per second.
+    uint32 allowedUplinkRate;         ///< Allowed uplink rate in KB per second.
+    uint32 uplinkQueueSize;           ///< Number of bytes pending in uplink queue.
+    uint32 actualDownlinkRate;        ///< Actual downlink rate in KB per second.
+    ThroughputQuality quality;        ///< Throughput quality.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Handler for throughput information indication.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+HANDLER ThroughputInfoHandler
+(
+    uint8             phone,     ///< Phone.
+    ThroughputInfoInd indication ///< Throughput information indication.
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The throughput information event.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+EVENT ThroughputInfoChange
+(
+    uint8                 phone,  ///< Phone.
+    ThroughputInfoHandler handler ///< Handler for throughput information.
+) = (68,69);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets the throughput report.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetThroughputReport
+(
+    uint8         phone     IN, ///< Phone.
+    LinkDirection direction IN, ///< Link direction.
+    bool          enabled   IN, ///< Enable or disable throughput indication reporting.
+    uint32        interval  IN  ///< Throughput report interval in milliseconds.
+) = 70;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the last throughput information list.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLastThroughputInfoList
+(
+    uint8              phone   IN, ///< Phone.
+    ThroughputInfoList listRef OUT ///< Throughput information list reference.
+) = 71;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Deletes the last throughput information list.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t DeleteLastThroughputInfoList
+(
+    ThroughputInfoList listRef IN ///< Throughput information list reference.
+) = 72;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the throughput information count.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetThroughputInfoCount
+(
+    ThroughputInfoList listRef IN, ///< Throughput information list reference.
+    uint32             count   OUT ///< Throughput information count.
+) = 73;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the throughput information.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetThroughputInfo
+(
+    ThroughputInfoList listRef IN, ///< Throughput information list reference.
+    uint32             index   IN, ///< Throughput information index.
+    ThroughputInfo     infoRef OUT ///< Throughput information reference.
+) = 74;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the throughput APN name.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetThroughputApnName
+(
+    ThroughputInfo infoRef                IN, ///< Throughput information reference.
+    string         name[APN_NAME_MAX_LEN] OUT ///< APN name.
+) = 75;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the throughput actual rate.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetThroughputActualRate
+(
+    ThroughputInfo infoRef   IN, ///< Throughput information reference.
+    LinkDirection  direction IN, ///< Link direction.
+    uint32         rate      OUT ///< Actual rate in KB per second.
+) = 76;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the throughput allowed rate.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetThroughputAllowedRate
+(
+    ThroughputInfo infoRef   IN, ///< Throughput information reference.
+    LinkDirection  direction IN, ///< Link direction.
+    uint32         rate      OUT ///< Allowed rate in KB per second.
+) = 77;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the throughput queue size.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetThroughputQueueSize
+(
+    ThroughputInfo infoRef   IN, ///< Throughput information reference.
+    LinkDirection  direction IN, ///< Link direction.
+    uint32         size      OUT ///< Number of bytes pending in queue.
+) = 78;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the throughput quality.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Time out.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetThroughputQuality
+(
+    ThroughputInfo    infoRef   IN, ///< Throughput information reference.
+    LinkDirection     direction IN, ///< Link direction.
+    ThroughputQuality quality   OUT ///< Throughput quality.
+) = 79;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets the data profile interface name.
+ *
+ * @return
+ *  - LE_OK        -- Succeeded.
+ *  - LE_NOT_FOUND -- Profile reference was not found.
+ *  - LE_FAULT     -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetInterface
+(
+    Profile profileRef             IN, ///< The profile reference.
+    string  inteface[NAME_MAX_LEN] IN  ///< The interface name.
+) = 80;
