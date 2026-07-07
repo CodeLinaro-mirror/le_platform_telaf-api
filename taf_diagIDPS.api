@@ -1,0 +1,343 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * @page c_tafDiagIDPS Diag IDPS Service
+ *
+ * @rst :ref:`API reference <File taf_diagIDPS_interface.h>` @endrst
+ *
+ * <HR>
+ *
+ * IDPS Service provides APIs to applications to monitor diagnostic IDPS status.
+ *
+ * @section c_taf_diagIDPS_binding IPC interfaces binding
+ *
+ * The functions of this API are provided by the @b tafDiagSvc platform service.
+ *
+ * The following example illustrates how to bind to the Diag IDPS service.
+ *
+ * @verbatim
+   bindings:
+   {
+        clientExe.clientComponent.taf_diagIDPS -> tafDiagSvc.taf_diagIDPS
+   }
+   @endverbatim
+ *
+ *@section c_taf_diagIDPS_get_service_API Get Diag IDPS service reference
+ *
+ * Get a Diag IDPS service reference using taf_diagIDPS_GetService(securityLevel) with the
+ * securityLevel passed as a parameter. Use the returned reference for subsequent operations.
+ *
+ * The following example illustrates how to set up a Diag IDPS server-service-instance.
+ *
+ * @code
+   taf_diagIDPS_ServiceRef_t svcRef;    // Service reference
+
+   // Get the service reference.
+   svcRef = taf_diagIDPS_GetService(securityLevel);
+   LE_ERROR_IF((svcRef == NULL), "taf_diagIDPS_GetService returns NULL!");
+   @endcode
+ *
+ * @section c_taf_diagIDPS_Set_VlanId Set VLAN ID
+ *
+ * After getting a service reference, an application can set the VLAN ID using
+ * taf_diagIDPS_SetVlanId(). It shall be called before registering the handler for the IDPS status
+ * notification message.
+ *
+ * - taf_diagIDPS_SetVlanId() -- Sets the VLAN ID.
+ *
+ * @section c_taf_diag_tester_OFF_ON_state_API Tester OFF/ON notification
+ *
+ * After getting the service reference, an application can call taf_diagIDPS_AddStatusHandler()
+ * to register a handler for IDPS status notification. Once IDPS is detected, the handler is called
+ * with the IDPS status message reference, security level, service ID and status passed as input
+ * parameters. Finally, it calls taf_diagIDPS_ReleaseStatusMsg() to release the IDPS status message.
+ *
+ * @code
+   // IDPS status handler function.
+   void IDPSStatusHandler
+    (
+        taf_diagIDPS_StatusMsgRef_t statusMsgRef,
+        taf_diagIDPS_SecurityLevel_t securityLevel,
+        uint8_t serviceId,
+        uint8_t status,
+        void* contextPtr
+    )
+   {
+        // Process after IDPS detection
+   }
+
+   // Register the IDPS status handler.
+   taf_diagIDPS_StatusHandlerRef_t handlerRef =
+       taf_diagIDPS_AddStatusHandler(svcRef,
+            (taf_diagIDPS_StatusHandlerRef_t)IDPSStatusHandler, NULL);
+   LE_ERROR_IF((handlerRef == NULL), "taf_diagIDPS_AddStatusHandler returns NULL!");
+
+   // To get the logical addresses.
+   uint16_t sourceAddr, targetAddr;
+   result = taf_diagIDPS_GetLogicalAddr(statusMsgRef, &sourceAddr, &targetAddr);
+   if (result != LE_OK)
+   {
+        LE_ERROR("Fail to get logical addresses.");
+        return result;
+   }
+
+   // To release the tester state msg after getting the state change notification.
+   le_result_t result = taf_diagIDPS_ReleaseStatusMsg(statusMsgRef);
+   if (result != LE_OK)
+   {
+      LE_ERROR("Fail to release msg.");
+      return result;
+   }
+
+   // To remove the handler function, when it is not needed.
+   taf_diagIDPS_RemoveStatusHandler(handlerRef);
+
+  @endcode
+ *
+ * <HR>
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The maximum data size.
+ */
+//--------------------------------------------------------------------------------------------------
+
+DEFINE MAX_DATA_SIZE = 32;
+//--------------------------------------------------------------------------------------------------
+/**
+ * Security level.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM SecurityLevel
+{
+    LOW_LEVEL = 0x01,       ///< IDPS status for both selected services and security access service.
+    HIGH_LEVEL = 0x02       ///< IDPS status for security access/Authentication service.
+};
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Reference to the Diag IDPS service.
+ */
+//-------------------------------------------------------------------------------------------------
+REFERENCE Service;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Reference to the IDPS status notification message.
+ */
+//-------------------------------------------------------------------------------------------------
+REFERENCE StatusMsg;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Gets the reference to a Diag IDPS service. If there is no Diag IDPS service, a new one will be
+ * created.
+ *
+ * @instaging
+ * @return
+ *     - Reference to the service instance.
+ *     - NULL if not allowed to create the service.
+ *
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION Service GetService
+(
+    SecurityLevel securityLevel IN        ///< Security level.
+) = 0;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets VLAN ID to the service. If the VLAN ID is not found or does not exist, it will return an
+ * error.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid parameter.
+ *     - LE_UNSUPPORTED -- IDPS or VLAN ID is unsupported.
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetVlanId
+(
+    Service svcRef IN,      ///< Service reference.
+    uint16 vlanId IN        ///< VLAN ID.
+) = 1;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Handler for an IDPS status notification.
+ *
+ * @instaging
+ */
+//-------------------------------------------------------------------------------------------------
+HANDLER StatusHandler
+(
+    StatusMsg statusMsgRef  IN,      ///< IDPS status message reference.
+    SecurityLevel securityLevel IN,  ///< Security level.
+    uint8 serviceId IN,              ///< Service ID.
+    uint8 status IN                  ///< 0, successful, or NRC.
+);
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * This event provides information on IDPS status change.
+ *
+ * @instaging
+ */
+//-------------------------------------------------------------------------------------------------
+EVENT Status
+(
+    Service svcRef,                ///< Service reference.
+    StatusHandler handler          ///< IDPS status handler.
+) =(2,3);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the VLAN ID of the IDPS status message.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid parameter.
+ *     - LE_NOT_FOUND -- statusMsg not found.
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetVlanIdFromMsg
+(
+    StatusMsg statusMsgRef  IN,    ///< IDPS status message reference.
+    uint16 vlanId   OUT            ///< VLAN ID.
+) = 4;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the logical address of the IDPS status message.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid parameter.
+ *     - LE_NOT_FOUND -- statusMsg not found.
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetLogicalAddr
+(
+    StatusMsg statusMsgRef  IN,    ///< IDPS status message reference.
+    uint16 sourceAddr       OUT,   ///< Logical source address.
+    uint16 targetAddr       OUT    ///< Logical target address.
+) = 5;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Gets the data size of the IDPS status message.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid parameter.
+ *     - LE_NOT_FOUND -- statusMsg not found.
+ *
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetDataSize
+(
+    StatusMsg statusMsgRef  IN,    ///< IDPS status message reference.
+    uint16 size  OUT               ///< The data size of parameter 1.
+) = 6;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Gets the data of the IDPS status message.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid parameter.
+ *     - LE_NOT_FOUND -- statusMsg not found.
+ *     - LE_OVERFLOW --  Buffer overflow.
+ *
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetData
+(
+    StatusMsg statusMsgRef  IN,    ///< IDPS status message reference.
+    uint8 data[MAX_DATA_SIZE]  OUT ///< The data of parameter 1.
+) = 7;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Gets the extra data size of the IDPS status message.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid parameter.
+ *     - LE_NOT_FOUND -- statusMsg not found.
+ *
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetExtraDataSize
+(
+    StatusMsg statusMsgRef  IN,    ///< IDPS status message reference.
+    uint16 size  OUT               ///< The data size of paramter 2.
+) = 8;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Gets the extra data of the IDPS status message.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid parameter.
+ *     - LE_NOT_FOUND -- statusMsg not found.
+ *     - LE_OVERFLOW --  Buffer overflow.
+ *
+  */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetExtraData
+(
+    StatusMsg statusMsgRef  IN,     ///< IDPS status message reference.
+    uint8 data[MAX_DATA_SIZE]  OUT  ///< The data of parameter 2.
+) = 9;
+
+//--------------------------------------------------------------------------------------------------
+/**
+* Releases an IDPS status notification message.
+*
+* @instaging
+* @return
+*     - LE_OK -- Succeeded.
+*     - LE_BAD_PARAMETER -- Invalid statusMsgRef.
+ *    - LE_NOT_FOUND -- statusMsg not found.
+*/
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t ReleaseStatusMsg
+(
+    StatusMsg statusMsgRef  IN    ///< IDPS status message reference.
+) = 10;
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Removes the Diag IDPS service.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK -- Succeeded.
+ *     - LE_BAD_PARAMETER -- Invalid svcRef.
+ *     - LE_UNSUPPORTED -- IDPS is unsupported.
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t RemoveSvc
+(
+    Service svcRef  IN    ///< Service reference.
+) = 11;
