@@ -1250,6 +1250,40 @@
    taf_radio_RemoveNrIconTypeHandler(handlerRef);
  *
    @endcode
+ *
+ * @section c_taf_radio_nr5g_band_preference NR5G band preference
+ *
+ * Users can query NR5G band capabilities and get/set NR5G band preferences for a given NR5G
+ * type (NR5G, NSA, or SA).
+ *
+ *  - taf_radio_GetNrBandCapabilities() -- Gets the RF band capabilities supported by the
+ *    device for a given NR5G type.
+ *
+ *  - taf_radio_SetNrBandPreferences() -- Sets the NR5G band preferences for a given NR5G type.
+ *
+ *  - taf_radio_GetNrBandPreferences() -- Gets the NR5G band preferences for a given NR5G type.
+ *
+ * @code
+ *
+   uint64_t bandCapabilityMask[TAF_RADIO_NR_BAND_GROUP_NUM];
+   le_result_t res = taf_radio_GetNrBandCapabilities(
+       TAF_RADIO_RAT_BIT_MASK_NR5G_SA, bandCapabilityMask, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get NR5G band capabilities: %d", res);
+
+   uint64_t bandPreferenceMask[TAF_RADIO_NR_BAND_GROUP_NUM] = {0};
+   bandPreferenceMask[0] = 0x1; // Example: enable band 1.
+   res = taf_radio_SetNrBandPreferences(TAF_RADIO_RAT_BIT_MASK_NR5G_SA,
+        bandPreferenceMask, phoneId);
+   if (res != LE_OK)
+        LE_ERROR("Failed to set NR5G band preferences: %d", res);
+
+   res = taf_radio_GetNrBandPreferences(TAF_RADIO_RAT_BIT_MASK_NR5G_SA,
+        bandPreferenceMask, phoneId);
+   if (res != LE_OK)
+       LE_ERROR("Failed to get NR5G band preferences: %d", res);
+ *
+   @endcode
  * <HR>
  *
  */
@@ -1307,6 +1341,19 @@ DEFINE NETWORK_NAME_MAX_LEN = 100;
  */
 //--------------------------------------------------------------------------------------------------
 DEFINE LTE_BAND_GROUP_NUM = 4;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * NR band group number.
+ * @b NOTE: The NR5G band mask uses 64 bits per group. 8 groups can represent NR bands 1..512.
+ *          Band N maps to bandMask[(N - 1) / 64] bit ((N - 1) % 64).
+ *
+ * @b NOTE: Current API support is limited to NR bands up to n262. Bits for bands above the
+ *          platform-supported range are reserved and must be zero in taf_radio_SetNrBandPreferences().
+ *          Query APIs return zero for unsupported/reserved bands.
+ */
+//--------------------------------------------------------------------------------------------------
+DEFINE NR_BAND_GROUP_NUM = 8;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1799,13 +1846,15 @@ ENUM CAScellState
 //--------------------------------------------------------------------------------------------------
 BITMASK RatBitMask
 {
-    RAT_BIT_MASK_GSM,     ///< GSM bitmask.
-    RAT_BIT_MASK_UMTS,    ///< UMTS bitmask.
-    RAT_BIT_MASK_CDMA,    ///< CDMA bitmask.
-    RAT_BIT_MASK_TDSCDMA, ///< TDSCDMA bitmask.
-    RAT_BIT_MASK_LTE,     ///< LTE bitmask.
-    RAT_BIT_MASK_NR5G,    ///< NR5G bitmask.
-    RAT_BIT_MASK_ALL      ///< All RAT bitmask.
+    RAT_BIT_MASK_GSM,      ///< GSM bitmask.
+    RAT_BIT_MASK_UMTS,     ///< UMTS bitmask.
+    RAT_BIT_MASK_CDMA,     ///< CDMA bitmask.
+    RAT_BIT_MASK_TDSCDMA,  ///< TDSCDMA bitmask.
+    RAT_BIT_MASK_LTE,      ///< LTE bitmask.
+    RAT_BIT_MASK_NR5G,     ///< NR5G bitmask (includes both NSA and SA modes).
+    RAT_BIT_MASK_ALL,      ///< All RAT bitmask (GSM, UMTS, CDMA, TDSCDMA, LTE, and NR5G).
+    RAT_BIT_MASK_NR5G_NSA, ///< NR5G NSA-only bitmask.
+    RAT_BIT_MASK_NR5G_SA   ///< NR5G SA-only bitmask.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -1987,6 +2036,8 @@ HANDLER ManualSelectionHandler
  *
  * @param[in] rejInd     Network rejection indication.
  * @param[in] contextPtr Context pointer.
+ *
+ * @b NOTE: NR5G is reported as the combined RAT only; NSA/SA granularity isn't supported.
  */
 //--------------------------------------------------------------------------------------------------
 HANDLER NetRegRejectHandler
@@ -2000,6 +2051,8 @@ HANDLER NetRegRejectHandler
  *
  * @param[in] ratChangeInd RAT change indication.
  * @param[in] contextPtr   Context pointer.
+ *
+ * @b NOTE: NR5G is reported as the combined RAT only; NSA/SA granularity isn't supported.
  */
 //--------------------------------------------------------------------------------------------------
 HANDLER RatChangeHandler
@@ -2100,6 +2153,10 @@ HANDLER CellularNetworkScanHandler
  * @param[in] listRef    PCI network scan information list reference.
  * @param[in] phoneId    Phone ID.
  * @param[in] contextPtr Context pointer.
+ *
+ * @b NOTE: The PCI network scan path doesn't support NR5G NSA/SA granularity. When the scan is
+ *          requested with RAT_BIT_MASK_NR5G_NSA or RAT_BIT_MASK_NR5G_SA, the handler is invoked with
+ *          a null list reference.
  */
 //--------------------------------------------------------------------------------------------------
 HANDLER PciNetworkScanHandler
@@ -2603,15 +2660,81 @@ FUNCTION le_result_t GetLteBandPreferences
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Adds a preferred operator.
+ * Gets the RF band capabilities supported by the device for a given NR5G type.
+ *
+ * @instaging
  *
  * @return
  *  - LE_OK -- Succeeded.
- *  - LE_BAD_PARAMETER -- Bad parameters (null pointer or invalid MCC/MNC string).
- *  - LE_OUT_OF_RANGE -- MCC or MNC value out of range [0, 999].
+ *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetNrBandCapabilities
+(
+    RatBitMask ratMask IN,                     ///< NR RAT bitmask selector.
+    uint64 bandMaskPtr[NR_BAND_GROUP_NUM] OUT, ///< NR5G band capabilities.
+    uint8 phoneId IN                           ///< Phone ID.
+) =164;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets NR5G band preferences for a given NR5G type.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetNrBandPreferences
+(
+    RatBitMask ratMask IN,                 ///< NR RAT bitmask selector.
+    uint64 bandMask[NR_BAND_GROUP_NUM] IN, ///< NR5G band preferences.
+    uint8 phoneId IN                       ///< Phone ID.
+) =165;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets NR5G band preferences for a given NR5G type.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_FAULT -- Failed.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetNrBandPreferences
+(
+    RatBitMask ratMask IN,                     ///< NR RAT bitmask selector.
+    uint64 bandMaskPtr[NR_BAND_GROUP_NUM] OUT, ///< NR5G band preferences.
+    uint8 phoneId IN                           ///< Phone ID.
+) =166;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Adds a preferred operator.
+ *
+ * @return
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_DUPLICATE -- Duplicate preferred operator.
+ *  - LE_FAULT -- Failed.
+ *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OUT_OF_RANGE -- MCC or MNC value out of range [0, 999].
+ *
+ * @b NOTE: The preferred operator path doesn't support NSA/SA granularity. Only the combined
+ *          TAF_RADIO_RAT_BIT_MASK_NR5G bit is accepted; passing TAF_RADIO_RAT_BIT_MASK_NR5G_NSA
+ *          or TAF_RADIO_RAT_BIT_MASK_NR5G_SA returns LE_BAD_PARAMETER.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddPreferredOperator
@@ -2627,13 +2750,17 @@ FUNCTION le_result_t AddPreferredOperator
  *  Removes a preferred operator.
  *
  * @return
- *  - LE_OK -- Succeeded.
- *  - LE_BAD_PARAMETER -- Bad parameters (null pointer or invalid MCC/MNC string).
- *  - LE_OUT_OF_RANGE -- MCC or MNC value out of range [0, 999].
+ *  - LE_BAD_PARAMETER -- Bad parameters.
+ *  - LE_TIMEOUT -- Response timed out.
  *  - LE_NOT_FOUND -- Preferred operator not found.
  *  - LE_FAULT -- Failed.
- *  - LE_TIMEOUT -- Timeout.
+ *  - LE_OK -- Succeeded.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_OUT_OF_RANGE -- MCC or MNC value out of range [0, 999].
+ *
+ * @b NOTE: The preferred operator path doesn't support NR5G NSA/SA granularity.If a retained entry
+ *          carries granular TAF_RADIO_RAT_BIT_MASK_NR5G_NSA or TAF_RADIO_RAT_BIT_MASK_NR5G_SA bits,
+ *          LE_BAD_PARAMETER is returned.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemovePreferredOperator
@@ -2667,6 +2794,9 @@ FUNCTION le_result_t DeletePreferredOperatorsList
  *  - Null pointer -- Internal error or no preferred operators list.
  *
  * @b NOTE: At most 1 preferred operator list per slot.
+ *
+ * @b NOTE: The preferred operator path doesn't support NR5G NSA/SA granularity.
+ *          NR5G is returned as the combined TAF_RADIO_RAT_BIT_MASK_NR5G bit only.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION PreferredOperatorList GetPreferredOperatorsList
@@ -2711,6 +2841,10 @@ FUNCTION PreferredOperator GetNextPreferredOperator
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_OUT_OF_RANGE -- Buffer size too small.
  *  - LE_NOT_FOUND -- Preferred operator not found.
+ *
+ * @b NOTE: The returned RAT bitmask only reports the combined TAF_RADIO_RAT_BIT_MASK_NR5G bit for
+ *          NR5G; if the stored entry carries granular NR5G_NSA/NR5G_SA bits, LE_BAD_PARAMETER is
+ *          returned.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetPreferredOperatorDetails
@@ -2731,6 +2865,9 @@ FUNCTION le_result_t GetPreferredOperatorDetails
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *
+ * @b NOTE: TAF_RADIO_RAT_BIT_MASK_NR5G is reported as the combined RAT_NR5G only;
+ *          TAF_RADIO_RAT_BIT_MASK_NR5G_NSA or TAF_RADIO_RAT_BIT_MASK_NR5G_SA isn't supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRadioAccessTechInUse
@@ -2742,6 +2879,14 @@ FUNCTION le_result_t GetRadioAccessTechInUse
 //--------------------------------------------------------------------------------------------------
 /**
  *  Sets the RAT preferences.
+ *
+ * @b NOTE: TAF_RADIO_RAT_BIT_MASK_NR5G means combined NR preference, allowing both NSA and SA when
+ * supported by the platform. TAF_RADIO_RAT_BIT_MASK_NR5G_NSA and TAF_RADIO_RAT_BIT_MASK_NR5G_SA
+ * request NSA-only or SA-only NR5G preference respectively.
+ *
+ * @b NOTE: TAF_RADIO_RAT_BIT_MASK_NR5G_NSA | TAF_RADIO_RAT_BIT_MASK_NR5G_SA is treated as combined
+ * NR5G preference. TAF_RADIO_RAT_BIT_MASK_NR5G must not be combined with TAF_RADIO_RAT_BIT_MASK_NR5G_NSA or
+ * TAF_RADIO_RAT_BIT_MASK_NR5G_SA; doing so returns LE_BAD_PARAMETER.
  *
  * @return
  *  - LE_OK -- Succeeded.
@@ -2959,6 +3104,10 @@ FUNCTION le_result_t DeleteSignalMetrics
  *
  * @return
  *  - taf_radio_RatBitMask_t -- RAT bitmask of signal metrics.
+ *
+ * @b NOTE: For NR5G, this API returns TAF_RADIO_RAT_BIT_MASK_NR5G only.
+ *          TAF_RADIO_RAT_BIT_MASK_NR5G_NSA and TAF_RADIO_RAT_BIT_MASK_NR5G_SA aren't supported
+ *          by this API.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION RatBitMask GetRatOfSignalMetrics
@@ -3070,6 +3219,8 @@ FUNCTION le_result_t GetCdmaSignalMetrics
  *
  * @b NOTE: If NR5G signal metrics are unavailable, output parameters are set to
  *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
+ *
+ * @b NOTE: These metrics represent combined NR5G only; NSA/SA granularity isn't supported.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNr5gSignalMetrics
@@ -3406,6 +3557,10 @@ FUNCTION le_result_t GetCellularNetworkName
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *
+ * @b NOTE: For NR5G, this API returns TAF_RADIO_RAT_BIT_MASK_NR5G only.
+ *          TAF_RADIO_RAT_BIT_MASK_NR5G_NSA and TAF_RADIO_RAT_BIT_MASK_NR5G_SA aren't supported
+ *          by this API.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION Rat GetCellularNetworkRat
@@ -3471,11 +3626,14 @@ FUNCTION bool IsCellularNetworkForbidden
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Performs celluar network scan with Physical Cell ID.
+ *  Performs cellular network scan with Physical Cell ID.
  *
  * @return
  *  - Non-null pointer -- The PCI network scan information list reference.
  *  - Null pointer -- Internal error.
+ *
+ * @b NOTE: Passing TAF_RADIO_RAT_BIT_MASK_NR5G_NSA or TAF_RADIO_RAT_BIT_MASK_NR5G_SA causes
+ *          this API to return a null pointer.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION PciScanInformationList PerformPciNetworkScan
@@ -3487,6 +3645,9 @@ FUNCTION PciScanInformationList PerformPciNetworkScan
 //--------------------------------------------------------------------------------------------------
 /**
  *  Asynchronously performs celluar network scan with physical cell ID.
+ *
+ * @b NOTE: Passing TAF_RADIO_RAT_BIT_MASK_NR5G_NSA or TAF_RADIO_RAT_BIT_MASK_NR5G_SA causes
+ *          this API to return a null pointer.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION PerformPciNetworkScanAsync
@@ -4154,7 +4315,7 @@ FUNCTION le_result_t GetOperatingMode
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
  *
- * @note Only applicable for GSM/WCDMA/TDSCDMA.
+ * @b NOTE: Only applicable for GSM/WCDMA/TDSCDMA.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellRoutingAreaCode
