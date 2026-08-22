@@ -4272,10 +4272,11 @@ ENUM GnssMeasurementsStateValidityType {
  */
 //--------------------------------------------------------------------------------------------------
 ENUM GnssMeasurementsAdrStateValidityType {
-    UNKNOWN_STATE   = 0,    ///< State is unknown.
-    VALID_BIT       = 1,    ///< State is valid.
-    RESET_BIT       = 2,    ///< State is reset.
-    CYCLE_SLIP_BIT  = 4     ///< State is cycle slip.
+    UNKNOWN_STATE   = 0,          ///< State is unknown.
+    VALID_BIT       = 1,          ///< State is valid.
+    RESET_BIT       = 2,          ///< State is reset.
+    CYCLE_SLIP_BIT  = 4,          ///< State is cycle slip.
+    HALF_CYCLE_RESOLVED_BIT = 8   ///< State is half cycle resolved.
 };
 
 //--------------------------------------------------------------------------------------------------
