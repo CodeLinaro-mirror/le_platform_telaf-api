@@ -194,6 +194,7 @@
  * - taf_ecall_SetMsdEuroNCAPIIDeltaV() -- Sets the IIDeltaV for Euro NCAP additional data of the vehicle.
  * - taf_ecall_SetMsdTimeStamp() -- Sets the MSD timestamp as the given value.
  * - taf_ecall_ResetMsdTimeStamp() -- Resets the MSD timestamp to the system time before session start.
+ * - taf_ecall_SetMsdControlBits() -- Sets the MSD control automatic activation and test call bits.
  *
  * The MSD is automatically encoded with the previous MSD values set earlier.
  *
@@ -1090,6 +1091,35 @@ FUNCTION le_result_t ResetMsdTimeStamp
     Call   ecallRef IN                ///< eCall reference.
 ) = 29;
 
+//-------------------------------------------------------------------------------------------------
+/**
+ * Sets the MSD control automatic activation and test call bits according to the given eCall
+ * reference. These bits are used when the service generates or updates the structured MSD.
+ *
+ * Typical usage is for an application to explicitly restore the eCall activation context before
+ * MSD generation/update after a NAD reboot or after an eCall service reboot.
+ *
+ * @instaging
+ *
+ * @b NOTE: The following service-reboot scenarios are not supported by this API:
+ *          - eCall service reboot while a call is in progress.
+ *          - eCall service reboot during the redial procedure.
+ *
+ * @return
+ *      - LE_OK -- Succeeded.
+ *      - LE_BAD_PARAMETER -- Bad eCall reference or invalid bit combination. Setting both
+ *                            automaticActivation and testCall to true is invalid.
+ *      - LE_DUPLICATE -- The MSD has already been imported.
+ *
+ * @b NOTE: The process exits when an invalid eCall reference is given.
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetMsdControlBits
+(
+    Call ecallRef IN,              ///< eCall reference.
+    bool automaticActivation IN,   ///< Automatic activation bit of the MSD control field.
+    bool testCall IN               ///< Test call bit of the MSD control field.
+) = 58;
 //-------------------------------------------------------------------------------------------------
 /**
  * Imports the PDU MSD according to the given eCall reference. The maximum MSD length
