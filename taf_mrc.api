@@ -99,6 +99,7 @@
  * - taf_mrc_GetEfsAvgPECount() -- Gets the average Program/Erase count.
  * - taf_mrc_GetEfsPEStandardDeviation() -- Gets the standard deviation of Program/Erase counts.
  * - taf_mrc_GetEfsBadBlocks() -- Gets the bad block count.
+ * - taf_mrc_GetEfsBlocksInPECountRange() -- Gets the number of blocks in a P/E count range.
  * - taf_mrc_SetEfsBackupPeriod() -- Sets the EFS backup timer period (in seconds).
  *
  * @code
@@ -160,6 +161,15 @@
        goto cleanup;
    }
    LE_INFO("Bad block count: %u", count);
+
+   // Get the number of blocks whose P/E count is within 20K-40K.
+   res = taf_mrc_GetEfsBlocksInPECountRange(metricsRef, 20000, 40000, &count);
+   if (res != LE_OK)
+   {
+       LE_ERROR("taf_mrc_GetEfsBlocksInPECountRange failed: %d", res);
+       goto cleanup;
+   }
+   LE_INFO("Blocks in [20K, 40K): %u", count);
 
    // Set the period of EFS backup.
    res = taf_mrc_SetEfsBackupPeriod(3600);
@@ -571,3 +581,29 @@ EVENT ToggleBank
 (
     ToggleBankHandler handler ///< Handler for toggling bank.
 ) = (14,15);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the number of blocks whose Program/Erase(PE) count falls within the range [lower, upper).
+ *
+ * The range is half-open: lower <= PE count < upper. To count the highest open-ended band, pass
+ * upper = UINT32_MAX.
+ *
+ * Example: for bands <20K, 20K-40K, 40K-60K, >=60K, call with [0, 20000), [20000, 40000),
+ * [40000, 60000), and [60000, UINT32_MAX) respectively.
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- Bad parameters (lower >= upper, or null count).
+ *  - LE_NOT_FOUND -- Reference not found.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetEfsBlocksInPECountRange
+(
+    Metrics MetricsRef IN, ///< The EFS metrics reference.
+    uint32 lower IN,       ///< Lower bound (inclusive).
+    uint32 upper IN,       ///< Upper bound (exclusive).
+    uint32 count OUT       ///< Number of blocks with lower <= PE count < upper.
+) = 16;

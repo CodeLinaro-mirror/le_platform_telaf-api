@@ -107,9 +107,11 @@
  * session state changes. The handler can be controlled using taf_ecall_AddStateChangeHandler()
  * and taf_ecall_RemoveStateChangeHandler().
  *
- * An application may call taf_ecall_GetTerminationReason() to get the end reason of the eCall
- * when the eCall state is @ref TAF_ECALL_STATE_ENDED and and
- * taf_ecall_GetPlatformSpecificTerminationCode() to get the platform-related termination code.
+ * An application can use the following functions to get termination-related information when the eCall state
+ * is either TAF_ECALL_STATE_ENDED or TAF_ECALL_STATE_END_OF_REDIAL_PERIOD.
+ * - taf_ecall_GetTerminationReason() -- Gets the eCall end reason after termination.
+ * - taf_ecall_GetTerminationRedialReason() -- Gets the eCall redial reason after termination.
+ * - taf_ecall_GetPlatformSpecificTerminationCode() -- Gets the platform-related termination code after termination.
  *
  * @section taf_ecall_PsapNumber eCall number
  *
@@ -192,6 +194,7 @@
  * - taf_ecall_SetMsdEuroNCAPIIDeltaV() -- Sets the IIDeltaV for Euro NCAP additional data of the vehicle.
  * - taf_ecall_SetMsdTimeStamp() -- Sets the MSD timestamp as the given value.
  * - taf_ecall_ResetMsdTimeStamp() -- Resets the MSD timestamp to the system time before session start.
+ * - taf_ecall_SetMsdControlBits() -- Sets the MSD control automatic activation and test call bits.
  *
  * The MSD is automatically encoded with the previous MSD values set earlier.
  *
@@ -257,41 +260,10 @@
  * @section taf_ecall_usage_flow Typical application call flow
  *
  * @rstblock
- * .. image:: /rst/flow_diagrams/eCall_usage_flow.jpg
+ * .. include:: /rst/ecall.rst
  * @endrst
- *
- * eCall apps can use the TelAF eCall service to start an eCall with a PSAP, enable conversation over a voice channel,
- * and end the eCall.
- *
- * #1 -- Create an eCall session and get the eCall reference which will be used to make an eCall with PSAP.
- *
- * #2 -- Register the state change handler to get notifications from the TelAF eCall service when the eCall state gets changed.
- *
- * #3 -- Construct MSD message, including position information from the GNSS service, vehicle information, passenger count, etc.
- *
- * #4 -- Start an eCall via the eCall Service. The eCall service will initiate a corresponding eCall to PSAP. After this, the
- *       state change handler will be notified that the eCall state is DIALING and then ALERTING which means that the eCall
- *       successfully reached the PSAP.
- *
- *       After the eCall is answered by the PSAP, the eCall state changes to ACTIVE and in MSD Pull mode, the eCall Service
- *       gets a state indication TAF_STATE_MSD_UPDATE_REQ from the PSAP to receive MSD.
- *       Without this state indication, as of now, the client application should update MSD to the NAD (i.e., modem) by calling
- *       the taf_ecall_SendMsd() API. Later, when the NAD gets an indication from the PSAP in pull mode, NAD will use the updated
- *       MSD and send it to the PSAP.
- *
- * #5 -- Start sending encoded MSD via the eCall Service to the PSAP. The eCall state becomes TAF_STATE_MSD_TRANSMISSION_STARTED and the
- *       TAF_STATE_LL_ACK_RECEIVED.
- *
- *       After PSAP successfully receives the MSD, the eCall state changes to TAF_STATE_MSD_TRANSMISSION_SUCCESS and the state change
- *       hander will be notified.
- *
- *       Call active: The eCall app might need to stay active to reserve a voice call channel to enable the passenger to talk with the PSAP.
- *
- * #6 -- When the conversation is finished, the eCall app can end the call using the eCall Service API. This will send the BYE signal to the PSAP.
- *       After the eCall is successfully ended, the eCall state will change to ENDED and the state change handler will be notified of the same.
- *
+ * 
  * <HR>
- *
  */
 //-------------------------------------------------------------------------------------------------
 
@@ -420,7 +392,9 @@ ENUM State
     STATE_ENDED,                              ///< Call stopped.
     STATE_RESET,                              ///< Not supported.
     STATE_COMPLETED,                          ///< Not supported.
-    STATE_FAILED,                             ///< Not supported.
+    STATE_FAILED,                             ///< If the modem crashes or reboots while an eCall is in progress, the system will report
+                                              ///< a "modem unavailable" event to eCall service. This state indicates that the modem is
+                                              ///< temporarily inaccessible and cannot continue the eCall operation.
     STATE_END_OF_REDIAL_PERIOD,               ///< Ended call of the redial period.
     STATE_T2_EXPIRED,                         ///< T2 timer expired.
     STATE_TIMEOUT_T3,                         ///< Not  supported.
@@ -450,7 +424,8 @@ ENUM State
     STATE_T10_STOPPED,                        ///< T10 Timer stopped.
     STATE_INCOMING,                           ///< Incoming eCall.
     STATE_LL_NACK_DUE_TO_T7_EXPIRY,           ///< Link-Layer Acknowledgement (LL-NACK) is received during in-band MSD transmission due to expiry of T7 Timer.
-    STATE_T9_RESUMED                          ///< T9 Timer resumed.
+    STATE_T9_RESUMED,                         ///< T9 Timer resumed.
+    STATE_T10_RESUMED                         ///< T10 Timer resumed.
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -527,6 +502,23 @@ ENUM TerminationReason
    REASON_CDMA_NOT_EMERGENCY = 1008,
    REASON_CDMA_ACCESS_BLOCKED = 1009,
    REASON_ERROR_UNSPECIFIED = 0xffff
+};
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Recently terminated call redial reason (normally ended or failed).
+ */
+//-------------------------------------------------------------------------------------------------
+ENUM TerminationRedialReason
+{
+   TERMINATION_REDIAL_REASON_NONE = 0,                   ///< Redial reason is NONE.
+   TERMINATION_REDIAL_REASON_CALL_ORIG_FAILURE = 1,      ///< Redial will be attempted due to eCall origination failure.
+   TERMINATION_REDIAL_REASON_CALL_DROP = 2,              ///< Redial will be attempted as the eCall is terminated
+                                                         ///< before thereciept of MSD Transmission status.
+   TERMINATION_REDIAL_REASON_MAX_REDIAL_ATTEMPTED = 3,   ///< Redial will not be attempted as the maximum redial count
+                                                         ///< is reached.
+   TERMINATION_REDIAL_REASON_CALL_CONNECTED = 4,         ///< Redial will not be attempted as the eCall was connected
+                                                         ///< successfully.
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -1101,6 +1093,35 @@ FUNCTION le_result_t ResetMsdTimeStamp
 
 //-------------------------------------------------------------------------------------------------
 /**
+ * Sets the MSD control automatic activation and test call bits according to the given eCall
+ * reference. These bits are used when the service generates or updates the structured MSD.
+ *
+ * Typical usage is for an application to explicitly restore the eCall activation context before
+ * MSD generation/update after a NAD reboot or after an eCall service reboot.
+ *
+ * @instaging
+ *
+ * @b NOTE: The following service-reboot scenarios are not supported by this API:
+ *          - eCall service reboot while a call is in progress.
+ *          - eCall service reboot during the redial procedure.
+ *
+ * @return
+ *      - LE_OK -- Succeeded.
+ *      - LE_BAD_PARAMETER -- Bad eCall reference or invalid bit combination. Setting both
+ *                            automaticActivation and testCall to true is invalid.
+ *      - LE_DUPLICATE -- The MSD has already been imported.
+ *
+ * @b NOTE: The process exits when an invalid eCall reference is given.
+ */
+//-------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetMsdControlBits
+(
+    Call ecallRef IN,              ///< eCall reference.
+    bool automaticActivation IN,   ///< Automatic activation bit of the MSD control field.
+    bool testCall IN               ///< Test call bit of the MSD control field.
+) = 58;
+//-------------------------------------------------------------------------------------------------
+/**
  * Imports the PDU MSD according to the given eCall reference. The maximum MSD length
  * is 255 bytes for private eCall and 140 bytes for other eCall.
  *
@@ -1273,6 +1294,15 @@ FUNCTION le_result_t Answer
  *      - The current state of the given eCall.
  *
  * @b NOTE: The process exits if an invalid eCall reference is passed.
+ *
+ * @b NOTE: This API only returns the current eCall state. It does not provides historical or
+ *       intermediate transient state.
+ *
+ * @b NOTE: When using polling to call this API, if the state changes more frequently than the
+ *       polling interval, some transient states may not be detected and could be missed.
+ *
+ * @b NOTE: For scenarios requiring a complete record of state transitions, please use the
+ *       StateChangeHandler instead of relying solely on this API.
  */
 //-------------------------------------------------------------------------------------------------
 FUNCTION State GetState
@@ -1562,3 +1592,26 @@ FUNCTION le_result_t SetInitialDialIntervalBetweenDialAttempts
 (
     uint16 interval[MAX_DIAL_ATTEMPTS_LENGTH] IN   ///< Interval in unit of seconds.
 ) =56;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Retrieves the termination redial reason for an eCall after it has reached a terminal state. This
+ * API provides the reason why the modem will attempt or will not attempt a redial after the call
+ * termination.
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_FAULT -- Failed.
+ *  - LE_BAD_PARAMETER -- Invalid parameters.
+ *
+ * @b NOTE: Passing a bad or null pointer to this function results in a fatal error and the function
+ *       may not return.
+ *
+ * @b NOTE: This API should be called after receiving a terminal state event in the application.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetTerminationRedialReason
+(
+    Call ecallRef IN,      ///< eCall reference.
+    TerminationRedialReason reason OUT   ///< Termination redial reason.
+) =57;

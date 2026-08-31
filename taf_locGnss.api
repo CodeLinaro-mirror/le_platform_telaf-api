@@ -1279,34 +1279,10 @@
  * @section taf_locGnss_usage_flow Typical application call flow
  *
  * @rstblock
- * .. image:: /rst/flow_diagrams/location_usage_flow.jpg
- *
- * The Location application locates in NAD device and access the tafLocationSvc on the corresponding NAD device.
- *
- * #0 -- Start GNSS session with the service.
- *
- * #1 -- Add the position handler to be able to receive any GNSS fixes received from the location service.
- *
- * #2 -- Get location information including longitude, latitude and horizontal accuracy.
- *
- * #3 -- Get the altitude information and its accuracy.
- *
- * #4 -- Get the vehicle direction information and its accuracy.
- *
- * #5 -- Get the horizontal speed information and its accuracy.
- *
- * #6 -- Get the vertical speed information and its accuracy.
- *
- * #7 -- Get the position state, ex. 2D, 3D and Estimated Fix.
- *
- * #8 -- When there's no need to receive any GNSS fixes from the application, the registered handler reference can be removed.
- *
- * #9 -- Stop the GNSS session with the service. This will stop receiving fixes at the location service.
- *
+ * .. include:: /rst/locGnss.rst
  * @endrst
  *
  * <HR>
- *
  */
 //-------------------------------------------------------------------------------------------------
 
@@ -1606,16 +1582,26 @@ ENUM LocEngineType
 STRUCT PositionSampleEx
 {
     int64   longitude;             ///< Longitude information round off to 6 decimal places.
+                                   ///< Default resolution is 6 decimal places and can be changed
+                                   ///< using taf_locGnss_SetDataResolution().
     int64   latitude;              ///< Latitude information round off to 6 decimal places.
+                                   ///< Default resolution is 6 decimal places and can be changed
+                                   ///< using taf_locGnss_SetDataResolution().
     int32   hAccuracy;             ///< Horizontal uncertainty round off to 2 decimal places.
     int32   altitude;              ///< Altitude data round off to 3 decimal places.
-    uint32  direction;             ///< Heading data multiplied by 10.
-    uint32  directionAccuracy;     ///< Heading uncertainty multiplied by 10.
+    uint32  direction;             ///< Heading data roundoff to 1 decimal place. Default resolution
+                                   ///< is 1 decimal place and can be changed using
+                                   ///< taf_locGnss_SetDataResolution().
+    uint32  directionAccuracy;     ///< Heading uncertainty data roundoff to 1 decimal place.
+                                   ///< Default resolution is 1 decimal place and can be changed
+                                   ///<  using taf_locGnss_SetDataResolution().
     uint32  validityMask;          ///< LocationInfo validity mask.
     uint32  techMask;              ///< Technology mask used for location data.
     uint32  hSpeed;                ///< Speed information multiplied by 100.
     int32   hSpeedAccuracy;        ///< Speed uncertainty data multiplied by 1000.
     int32   vAccuracy;             ///< Vertical uncertainty round off to 1 decimal place.
+                                   ///< Default resolution is 1 decimal place and can be changed
+                                   ///< using taf_locGnss_SetDataResolution().
     uint64  epochTime;             ///< EpochTime data.
     uint64  realTime;              ///< Elapsed real time.
     uint64  realTimeUnc;           ///< Elapsed real time uncertainty.
@@ -1692,7 +1678,24 @@ ENUM Resolution
     RES_ONE_DECIMAL,           ///< 1 decimal place resolution.
     RES_TWO_DECIMAL,           ///< 2 decimal place resolution.
     RES_THREE_DECIMAL,         ///< 3 decimal place resolution.
+    RES_SIX_DECIMAL,           ///< 6 decimal place resolution.
+    RES_SEVEN_DECIMAL,         ///< 7 decimal place resolution.
     RES_UNKNOWN                ///< Unknown resolution.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Data type selector for taf_locGnss_SetDataResolution().
+ * Identifies to which location field the resolution setting applies.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM DataType
+{
+    DATA_TYPE_LATITUDE_LONGITUDE,    ///< Applies to latitude and longitude.
+    DATA_TYPE_VACCURACY,             ///< Applies to vertical accuracy.
+    DATA_TYPE_DIRECTION,             ///< Applies to direction.
+    DATA_TYPE_DIRECTION_ACCURACY,    ///< Applies to direction accuracy.
+    DATA_TYPE_UNKNOWN                ///< Unknown.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -1771,8 +1774,12 @@ FUNCTION ReleaseSampleRef
 FUNCTION le_result_t GetLocation
 (
     Sample positionSampleRef IN, ///< Position sample reference
-    int32 latitude OUT,          ///< WGS84 latitude in degrees with 6 decimal places.
-    int32 longitude OUT,         ///< WGS84 longitude in degrees with 6 decimal places.
+    int32 latitude OUT,          ///< WGS84 latitude in degrees with 6 decimal places. Default
+                                 ///< resolution is 6 decimal places and can be changed using
+                                 ///< taf_locGnss_SetDataResolution().
+    int32 longitude OUT,         ///< WGS84 longitude in degrees with 6 decimal places. Default
+                                 ///< resolution is 6 decimal places and can be changed using
+                                 ///< taf_locGnss_SetDataResolution().
     int32 hAccuracy OUT          ///< Horizontal accuracy in cm. Uncertainty is defined with 68%
                                  ///< confidence level.
 ) = 7;
@@ -1803,9 +1810,11 @@ FUNCTION le_result_t GetLocation
 FUNCTION le_result_t GetDirection
 (
     Sample  positionSampleRef IN,       ///< Position sample reference.
-    uint32  direction OUT,              ///< Direction in degrees with 1 decimal place.
+    uint32  direction OUT,              ///< Direction in degrees with 1 decimal place. Resolution
+                                        ///< can be changed using taf_locGnss_SetDataResolution().
     uint32  directionAccuracy OUT       ///< Direction accuracy estimation in degrees with 1 decimal place.
-                                        ///< Uncertainty is defined with 68% confidence level.
+                                        ///< Uncertainty is defined with 68% confidence level. Resolution
+                                        ///< can be changed using taf_locGnss_SetDataResolution().
 ) = 8;
 
 //--------------------------------------------------------------------------------------------------
@@ -1833,6 +1842,8 @@ FUNCTION le_result_t GetAltitude
     Sample positionSampleRef  IN,   ///< Position sample reference
     int32 altitude OUT,             ///< Altitude in mm above the WGS 84 reference ellipsoid.
     int32 vAccuracy OUT             ///< Vertical uncertainty in dm. Uncertainty is defined with 68% confidence level.
+                                    ///< Default resolution is 1 decimal place and can be changed
+                                    ///< using taf_locGnss_SetDataResolution().
 ) = 10;
 
 //--------------------------------------------------------------------------------------------------
@@ -4261,10 +4272,11 @@ ENUM GnssMeasurementsStateValidityType {
  */
 //--------------------------------------------------------------------------------------------------
 ENUM GnssMeasurementsAdrStateValidityType {
-    UNKNOWN_STATE   = 0,    ///< State is unknown.
-    VALID_BIT       = 1,    ///< State is valid.
-    RESET_BIT       = 2,    ///< State is reset.
-    CYCLE_SLIP_BIT  = 4     ///< State is cycle slip.
+    UNKNOWN_STATE   = 0,          ///< State is unknown.
+    VALID_BIT       = 1,          ///< State is valid.
+    RESET_BIT       = 2,          ///< State is reset.
+    CYCLE_SLIP_BIT  = 4,          ///< State is cycle slip.
+    HALF_CYCLE_RESOLVED_BIT = 8   ///< State is half cycle resolved.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -4884,3 +4896,47 @@ FUNCTION le_result_t GetIntegrityRiskUsed
     Sample positionSampleRef IN,        ///< Position sample reference.
     uint32 integrityRiskUsed  OUT       ///< Integrity risk used, in units of 2.5e-10.
 ) = 111;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets output resolution per field group per client session.
+ * Applies to: latitude/longitude, vAccuracy, direction, directionAccuracy.
+ *
+ * @instaging
+ *
+ * @return
+ *   - LE_OK               Succeeded.
+ *   - LE_BAD_PARAMETER    Invalid dataType or resolution provided.
+ *   - LE_NOT_PERMITTED The Location service state is not ready or active.
+ *   - LE_FAULT            Failed.
+ *
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetDataResolution
+(
+    DataType   dataType   IN,   ///< Location field group to configure.
+    Resolution resolution IN    ///< Decimal place resolution to apply.
+) = 112;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the output resolution set per client session.
+ * Applies to: latitude/longitude, vAccuracy, direction, directionAccuracy.
+ *
+ * @instaging
+ *
+ * @return
+ *   - LE_OK               Succeeded.
+ *   - LE_BAD_PARAMETER    Invalid dataType or resolution provided.
+ *   - LE_NOT_PERMITTED The Location service state is not ready or active.
+ *   - LE_FAULT            Failed.
+ *
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetDataResolution
+(
+    DataType    dataType    IN,    ///< Location field group to query.
+    Resolution  resolution  OUT    ///< Current resolution for that field group.
+) = 113;
