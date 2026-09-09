@@ -1346,6 +1346,8 @@ FUNCTION le_result_t GetInterfaceDNS
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddDestNatEntryOnDefaultPdn
@@ -1364,6 +1366,8 @@ FUNCTION le_result_t AddDestNatEntryOnDefaultPdn
  *   - LE_OK -- Success
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failure.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemoveDestNatEntryOnDefaultPdn
@@ -1382,6 +1386,8 @@ FUNCTION le_result_t RemoveDestNatEntryOnDefaultPdn
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddDestNatEntryOnDemandPdn
@@ -1401,6 +1407,8 @@ FUNCTION le_result_t AddDestNatEntryOnDemandPdn
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemoveDestNatEntryOnDemandPdn
@@ -1583,6 +1591,8 @@ FUNCTION Vlan GetVlanById
  *   - LE_DUPLICATE -- ifType already added into the VLAN.
  *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddVlanInterface
@@ -1604,6 +1614,8 @@ FUNCTION le_result_t AddVlanInterface
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemoveVlanInterface
@@ -1808,6 +1820,9 @@ FUNCTION int32 GetVlanBoundProfileId
  *   - LE_OK -- Succeeded.
  *   - LE_NOT_FOUND -- VLAN was not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
+ *   - LE_FAULT -- Failed to get the phone ID.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetVlanBoundPhoneId
@@ -1828,6 +1843,8 @@ FUNCTION le_result_t GetVlanBoundPhoneId
  *   - LE_NOT_FOUND -- VLAN wass not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t BindVlanWithProfile
@@ -1848,6 +1865,8 @@ FUNCTION le_result_t BindVlanWithProfile
  *   - LE_NOT_FOUND -- VLAN wass not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t BindVlanWithProfileEx
@@ -1869,6 +1888,8 @@ FUNCTION le_result_t BindVlanWithProfileEx
  *   - LE_NOT_FOUND -- VLAN wass not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UnbindVlanFromProfile
@@ -1886,6 +1907,8 @@ FUNCTION le_result_t UnbindVlanFromProfile
  *   - LE_OK -- Succeeded.
  *   - LE_NOT_FOUND -- Not found.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t EnableL2tp
@@ -1916,6 +1939,8 @@ FUNCTION EnableL2tpAsync
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed to disable L2TP.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DisableL2tp
@@ -2081,6 +2106,8 @@ FUNCTION le_result_t RemoveSession
  *   - LE_NOT_FOUND -- Not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t StartTunnel
@@ -2108,6 +2135,8 @@ FUNCTION StartTunnelAsync
  *   - LE_NOT_FOUND -- Not found.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t StopTunnel
@@ -2358,6 +2387,8 @@ FUNCTION le_result_t GetSessionConfig
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t EnableSocks
@@ -2385,6 +2416,8 @@ FUNCTION EnableSocksAsync
  *   - LE_NOT_FOUND -- SOCKS not found.
  *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DisableSocks
@@ -2410,6 +2443,8 @@ FUNCTION DisableSocksAsync
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetSocksAuthMethod
@@ -2439,6 +2474,8 @@ FUNCTION AuthMethod GetSocksAuthMethod
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetSocksLanInterface
@@ -2454,6 +2491,8 @@ FUNCTION le_result_t SetSocksLanInterface
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetSocksLanInterface
@@ -2469,6 +2508,8 @@ FUNCTION le_result_t GetSocksLanInterface
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddSocksAssociation
@@ -2485,6 +2526,8 @@ FUNCTION le_result_t AddSocksAssociation
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemoveSocksAssociation
@@ -2651,8 +2694,9 @@ FUNCTION int32 GetGsbBandWidth
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetBackhaulPreference
@@ -2674,8 +2718,9 @@ FUNCTION le_result_t GetBackhaulPreference
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
- *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetBackhaulPreference
@@ -2815,6 +2860,8 @@ FUNCTION le_result_t SetVlanBackhaulProfileId
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t BindVlanWithBackhaul
@@ -2838,6 +2885,8 @@ FUNCTION le_result_t BindVlanWithBackhaul
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_TIMEOUT -- Timeout.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t UnbindVlanFromBackhaul
@@ -2933,6 +2982,8 @@ FUNCTION le_result_t SetIPPTDeviceMacAddress
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetIPPassThroughConfig
@@ -3014,6 +3065,8 @@ FUNCTION le_result_t GetIPPTDeviceMacAddress
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetIPConfig
@@ -3134,6 +3187,8 @@ FUNCTION Interface GetIPConfig
  *   - LE_OK -- Succeeded.
  *   - LE_BAD_PARAMETER -- Bad parameter.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetIPPTNatConfig
@@ -3155,6 +3210,8 @@ FUNCTION le_result_t GetIPPTNatConfig
  * @return
  *   - LE_OK -- Succeeded.
  *   - LE_FAULT -- Failed.
+ *   - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ *   - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetIPPTNatConfig
