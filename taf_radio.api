@@ -2384,6 +2384,7 @@ EVENT ServiceStatusChange
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetRadioPower
@@ -2402,6 +2403,7 @@ FUNCTION le_result_t SetRadioPower
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRadioPower
@@ -2420,6 +2422,7 @@ FUNCTION le_result_t GetRadioPower
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetAutomaticRegisterMode
@@ -2438,6 +2441,7 @@ FUNCTION le_result_t SetAutomaticRegisterMode
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetManualRegisterMode
@@ -2471,6 +2475,7 @@ FUNCTION SetManualRegisterModeAsync
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRegisterMode
@@ -2503,6 +2508,7 @@ FUNCTION int32 GetPlatformSpecificRegistrationErrorCode
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetBandCapabilities
@@ -2521,6 +2527,7 @@ FUNCTION le_result_t GetBandCapabilities
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteBandCapabilities
@@ -2539,6 +2546,7 @@ FUNCTION le_result_t GetLteBandCapabilities
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetBandPreferences
@@ -2557,6 +2565,7 @@ FUNCTION le_result_t SetBandPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetBandPreferences
@@ -2575,6 +2584,7 @@ FUNCTION le_result_t GetBandPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetLteBandPreferences
@@ -2593,6 +2603,7 @@ FUNCTION le_result_t SetLteBandPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteBandPreferences
@@ -2612,6 +2623,7 @@ FUNCTION le_result_t GetLteBandPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t AddPreferredOperator
@@ -2634,6 +2646,7 @@ FUNCTION le_result_t AddPreferredOperator
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t RemovePreferredOperator
@@ -2651,6 +2664,8 @@ FUNCTION le_result_t RemovePreferredOperator
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Preferred operator not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeletePreferredOperatorsList
@@ -2711,6 +2726,8 @@ FUNCTION PreferredOperator GetNextPreferredOperator
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_OUT_OF_RANGE -- Buffer size too small.
  *  - LE_NOT_FOUND -- Preferred operator not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetPreferredOperatorDetails
@@ -2731,6 +2748,7 @@ FUNCTION le_result_t GetPreferredOperatorDetails
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRadioAccessTechInUse
@@ -2749,6 +2767,7 @@ FUNCTION le_result_t GetRadioAccessTechInUse
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetRatPreferences
@@ -2767,6 +2786,7 @@ FUNCTION le_result_t SetRatPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRatPreferences
@@ -2785,6 +2805,7 @@ FUNCTION le_result_t GetRatPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNetRegState
@@ -2803,6 +2824,7 @@ FUNCTION le_result_t GetNetRegState
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetPacketSwitchedState
@@ -2821,6 +2843,7 @@ FUNCTION le_result_t GetPacketSwitchedState
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServiceDomain
@@ -2839,6 +2862,7 @@ FUNCTION le_result_t GetServiceDomain
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetServiceDomainPreferences
@@ -2857,6 +2881,7 @@ FUNCTION le_result_t SetServiceDomainPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServiceDomainPreferences
@@ -2875,7 +2900,7 @@ FUNCTION le_result_t GetServiceDomainPreferences
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
- *
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetSignalStrengthIndThresholds
@@ -2896,7 +2921,7 @@ FUNCTION le_result_t SetSignalStrengthIndThresholds
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
- *
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetSignalStrengthIndDelta
@@ -2916,6 +2941,7 @@ FUNCTION le_result_t SetSignalStrengthIndDelta
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetSignalQual
@@ -2946,6 +2972,8 @@ FUNCTION Metrics MeasureSignalMetrics
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Preferred operator not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteSignalMetrics
@@ -2974,6 +3002,8 @@ FUNCTION RatBitMask GetRatOfSignalMetrics
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @deprecated The parameter @ber is deprecated.
  *
@@ -2996,6 +3026,8 @@ FUNCTION le_result_t GetGsmSignalMetrics
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_UNAVAILABLE -- UMTS unavailable.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @deprecated The parameter @ber is deprecated.
  *
@@ -3020,6 +3052,8 @@ FUNCTION le_result_t GetUmtsSignalMetrics
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: If LTE signal metrics are unavailable, output parameters are set to
  *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
@@ -3043,6 +3077,8 @@ FUNCTION le_result_t GetLteSignalMetrics
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @deprecated This API is scheduled to be removed in the future.
  *
@@ -3067,6 +3103,8 @@ FUNCTION le_result_t GetCdmaSignalMetrics
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: If NR5G signal metrics are unavailable, output parameters are set to
  *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
@@ -3232,6 +3270,7 @@ FUNCTION uint32 GetPhysicalServingNrCellId
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellGsmBsic
@@ -3266,6 +3305,7 @@ FUNCTION uint16 GetServingCellScramblingCode
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCurrentNetworkName
@@ -3287,6 +3327,7 @@ FUNCTION le_result_t GetCurrentNetworkName
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCurrentNetworkMccMnc
@@ -3358,6 +3399,8 @@ FUNCTION ScanInformation GetNextCellularNetworkScan
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteCellularNetworkScan
@@ -3373,6 +3416,8 @@ FUNCTION le_result_t DeleteCellularNetworkScan
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCellularNetworkMccMnc
@@ -3390,6 +3435,8 @@ FUNCTION le_result_t GetCellularNetworkMccMnc
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCellularNetworkName
@@ -3534,6 +3581,8 @@ FUNCTION PciScanInformation GetNextPciScanInfo
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeletePciNetworkScan
@@ -3602,6 +3651,8 @@ FUNCTION uint32 GetPciScanGlobalCellId
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- PLMN information reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetPciScanMccMnc
@@ -3633,6 +3684,8 @@ FUNCTION NeighborCells GetNeighborCellsInfo
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Neighbor cells reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteNeighborCellsInfo
@@ -3749,6 +3802,8 @@ FUNCTION uint32 GetPhysicalNeighborNrCellId
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Neighbor cells reference not found.
  *  - LE_FAULT -- Not a GSM cell.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNeighborCellGsmBsic
@@ -3782,6 +3837,7 @@ FUNCTION NetStatus GetNetStatus
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetRatSvcStatus
@@ -3801,6 +3857,7 @@ FUNCTION le_result_t GetRatSvcStatus
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCsCap
@@ -3833,6 +3890,7 @@ FUNCTION Ims GetIms
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsRegStatus
@@ -3853,6 +3911,7 @@ FUNCTION le_result_t GetImsRegStatus
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsSvcStatus
@@ -3873,6 +3932,7 @@ FUNCTION le_result_t GetImsSvcStatus
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsPdpError
@@ -3891,6 +3951,7 @@ FUNCTION le_result_t GetImsPdpError
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetImsSvcCfg
@@ -3911,6 +3972,7 @@ FUNCTION le_result_t SetImsSvcCfg
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsSvcCfg
@@ -3931,6 +3993,7 @@ FUNCTION le_result_t GetImsSvcCfg
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetImsUserAgent
@@ -3950,6 +4013,7 @@ FUNCTION le_result_t SetImsUserAgent
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetImsUserAgent
@@ -3966,6 +4030,7 @@ FUNCTION le_result_t GetImsUserAgent
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNrDualConnectivityStatus
@@ -3984,6 +4049,7 @@ FUNCTION le_result_t GetNrDualConnectivityStatus
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCurrentNetworkLongName
@@ -4002,6 +4068,7 @@ FUNCTION le_result_t GetCurrentNetworkLongName
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetHardwareSimConfig
@@ -4020,6 +4087,7 @@ FUNCTION le_result_t GetHardwareSimConfig
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetHardwareSimRatCapabilities
@@ -4037,6 +4105,8 @@ FUNCTION le_result_t GetHardwareSimRatCapabilities
  * @return
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters (invalid phone ID).
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 
 //--------------------------------------------------------------------------------------------------
@@ -4055,6 +4125,8 @@ FUNCTION le_result_t SetSignalStrengthIndHysteresis
  * @return
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters (invalid phone ID).
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 
 //--------------------------------------------------------------------------------------------------
@@ -4075,6 +4147,7 @@ FUNCTION le_result_t SetSignalStrengthIndHysteresisTimer
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: Only applicable for GSM.
  */
@@ -4097,6 +4170,7 @@ FUNCTION le_result_t GetServingCellArfcn
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: Only applicable for UMTS/TDSCDMA.
  */
@@ -4117,6 +4191,7 @@ FUNCTION le_result_t GetServingCellUarfcn
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetOperatingMode
@@ -4135,6 +4210,7 @@ FUNCTION le_result_t SetOperatingMode
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetOperatingMode
@@ -4153,6 +4229,7 @@ FUNCTION le_result_t GetOperatingMode
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @note Only applicable for GSM/WCDMA/TDSCDMA.
  */
@@ -4173,6 +4250,7 @@ FUNCTION le_result_t GetServingCellRoutingAreaCode
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: Only applicable for GSM/WCDMA/TDSCDMA.
  */
@@ -4194,6 +4272,7 @@ FUNCTION le_result_t GetServingCellBandInfo
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellLteBandInfo
@@ -4213,6 +4292,7 @@ FUNCTION le_result_t GetServingCellLteBandInfo
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetServingCellNrBandInfo
@@ -4232,6 +4312,7 @@ FUNCTION le_result_t GetServingCellNrBandInfo
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNrIconType
@@ -4257,6 +4338,7 @@ FUNCTION le_result_t GetNrIconType
  *  - LE_FAULT -- Failed.
  *  - LE_TIMEOUT -- Timeout.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetCAInformation
@@ -4274,6 +4356,8 @@ FUNCTION le_result_t GetCAInformation
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters (null reference).
  *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteCAInformation
@@ -4289,6 +4373,8 @@ FUNCTION le_result_t DeleteCAInformation
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters (null pointer).
  *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCAStatus
@@ -4307,6 +4393,7 @@ FUNCTION le_result_t GetLteCAStatus
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_FAULT -- Failed to get data available system status.
  *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetConnStatus
@@ -4322,6 +4409,8 @@ FUNCTION le_result_t GetConnStatus
  * @return
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters (null reference or reference not found in map).
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t DeleteConnStatus
@@ -4336,6 +4425,8 @@ FUNCTION le_result_t DeleteConnStatus
  * @return
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters (reference not found in map).
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetEndcConnectionStatus
@@ -4354,6 +4445,8 @@ FUNCTION le_result_t GetEndcConnectionStatus
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCAPCellPci
@@ -4372,6 +4465,8 @@ FUNCTION le_result_t GetLteCAPCellPci
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCAPCellFreq
@@ -4390,6 +4485,8 @@ FUNCTION le_result_t GetLteCAPCellFreq
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCAPCellDlBandwidth
@@ -4408,6 +4505,8 @@ FUNCTION le_result_t GetLteCAPCellDlBandwidth
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCAPCellBand
@@ -4426,6 +4525,8 @@ FUNCTION le_result_t GetLteCAPCellBand
  *  - LE_OK -- Succeeded.
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellCount
@@ -4446,6 +4547,8 @@ FUNCTION le_result_t GetLteCASCellCount
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OUT_OF_RANGE -- Index out of range.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellPci
@@ -4466,6 +4569,8 @@ FUNCTION le_result_t GetLteCASCellPci
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OUT_OF_RANGE -- Index out of range.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellFreq
@@ -4486,6 +4591,8 @@ FUNCTION le_result_t GetLteCASCellFreq
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OUT_OF_RANGE -- Index out of range.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellDlBandwidth
@@ -4506,6 +4613,8 @@ FUNCTION le_result_t GetLteCASCellDlBandwidth
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OUT_OF_RANGE -- Index out of range.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellBand
@@ -4526,6 +4635,8 @@ FUNCTION le_result_t GetLteCASCellBand
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OUT_OF_RANGE -- Index out of range.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellState
@@ -4546,6 +4657,8 @@ FUNCTION le_result_t GetLteCASCellState
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OUT_OF_RANGE -- Index out of range.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellIndex
@@ -4567,6 +4680,8 @@ FUNCTION le_result_t GetLteCASCellIndex
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OUT_OF_RANGE -- Index out of range.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetLteCASCellUlConfigured
@@ -4586,6 +4701,8 @@ FUNCTION le_result_t GetLteCASCellUlConfigured
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: If GSM signal strength in dBm is unavailable, output parameters are set to
  *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
@@ -4607,6 +4724,8 @@ FUNCTION le_result_t GetGsmSignalMetricsSs
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: If WCDMA Ec/Io is unavailable, output parameters are set to
  *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
@@ -4628,6 +4747,8 @@ FUNCTION le_result_t GetUmtsSignalMetricsEcio
  *  - LE_BAD_PARAMETER -- Bad parameters.
  *  - LE_NOT_FOUND -- Reference not found.
  *  - LE_OK -- Succeeded.
+ *  - LE_NOT_IMPLEMENTED -- Not implemented.
+ *  - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
  *
  * @b NOTE: If LTE RSSI is unavailable, output parameters are set to
  *          TAF_RADIO_INVALID_SIGNAL_STRENGTH_VALUE.
