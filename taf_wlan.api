@@ -602,8 +602,10 @@ EVENT DeviceState
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -619,8 +621,10 @@ FUNCTION le_result_t TurnOn
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -636,8 +640,11 @@ FUNCTION le_result_t TurnOff
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -654,8 +661,11 @@ FUNCTION le_result_t GetState
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -672,8 +682,12 @@ FUNCTION le_result_t SetMode
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_UNSUPPORTED -- Unknown WLAN mode.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -691,8 +705,12 @@ FUNCTION le_result_t GetMode
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_UNSUPPORTED -- Unknown WLAN mode.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -710,9 +728,11 @@ FUNCTION le_result_t GetIntfInfo
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - LE_NOT_POSSIBLE  The data subsystem has not been initialized.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -731,9 +751,11 @@ FUNCTION le_result_t GetBandIntState
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - LE_NOT_POSSIBLE  The data subsystem has not been initialized.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -751,9 +773,8 @@ FUNCTION le_result_t SetBandIntState
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - LE_NOT_POSSIBLE  The data subsystem has not been initialized.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -773,9 +794,8 @@ FUNCTION le_result_t GetBandIntPriority
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - LE_NOT_POSSIBLE  The data subsystem has not been initialized.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -793,9 +813,8 @@ FUNCTION le_result_t SetBandIntPriority
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - LE_NOT_POSSIBLE  The data subsystem has not been initialized.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -829,9 +848,8 @@ FUNCTION le_result_t GetBandIntWaitTime
  * @instaging
  *
  * @return
- * - LE_OK            Succeeded.
- * - LE_NOT_POSSIBLE  The data subsystem has not been initialized.
- * - Appropriate error is returned on failure.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
  *
  */
 //--------------------------------------------------------------------------------------------------

@@ -1000,8 +1000,10 @@ FUNCTION le_result_t Restart
  * @instaging
  *
  * @return
- * - LE_OK  -- Succeeded.
- * - Others -- Failed.
+ * - LE_OK -- Succeeded.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetMode
@@ -1017,8 +1019,11 @@ FUNCTION le_result_t SetMode
  * @instaging
  *
  * @return
- * - LE_OK  -- Succeeded.
- * - Others -- Failed.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetMode
@@ -1034,8 +1039,11 @@ FUNCTION le_result_t GetMode
  * @instaging
  *
  * @return
- * - LE_OK  -- Succeeded.
- * - Others -- Failed.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetIPConfig
@@ -1052,8 +1060,11 @@ FUNCTION le_result_t SetIPConfig
  * @instaging
  *
  * @return
- * - LE_OK  -- Succeeded.
- * - Others -- Failed.
+ * - LE_OK -- Succeeded.
+ * - LE_BAD_PARAMETER -- Bad parameter.
+ * - LE_CAP_NOT_IMPLEMENTED -- The underlying chipset support hasn't been implemented.
+ * - LE_CAP_UNSUPPORTED -- Unsupported due to chipset capabilities or chipset software limitations.
+ * - LE_FAULT -- Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetIPConfig
