@@ -445,9 +445,12 @@ FUNCTION WakeupSource NewWakeupSource
  * Acquires a passed wakeup source reference.
  *
  * @return
- *     - LE_OK             Wakeup source successfully acquired.
- *     - LE_BAD_PARAMETER  Invalid wakeup source reference.
- *     - LE_FAULT          Failed.
+ *     - LE_OK                    Wakeup source successfully acquired.
+ *     - LE_BAD_PARAMETER         Invalid wakeup source reference.
+ *     - LE_NOT_PERMITTED         Invalid client for MPMS.
+ *     - LE_CAP_NOT_IMPLEMENTED   The underlying platform hasn't implemented this capability.
+ *     - LE_CAP_UNSUPPORTED       Unsupported due to platform capability/software limitations.
+ *     - LE_FAULT                 Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t StayAwake
@@ -462,7 +465,6 @@ FUNCTION le_result_t StayAwake
  * @return
  *     - LE_OK             Wakeup source successfully released.
  *     - LE_BAD_PARAMETER  Invalid wakeup source reference.
- *     - LE_FAULT          Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t Relax
@@ -475,7 +477,7 @@ FUNCTION le_result_t Relax
  * Gets the current system state of the local process.
  *
  * @return
- * State of the system.
+ *     State of the system.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION State GetPowerState
@@ -490,8 +492,11 @@ FUNCTION State GetPowerState
 *
 * @instaging
 * @return
-*     - LE_OK          Successfully changed the state of device.
-*     - LE_FAULT       Failed.
+*     - LE_OK                    Successfully changed the state of device.
+*     - LE_CAP_NOT_IMPLEMENTED   The underlying platform hasn't implemented this capability.
+*     - LE_CAP_UNSUPPORTED       Unsupported due to platform capability/software limitations.
+*     - LE_BAD_PARAMETER         Invalid state.
+*     - LE_FAULT                 Failed.
 *
 
 */
@@ -509,10 +514,12 @@ FUNCTION le_result_t SetAllVMPowerState
 *
 * @instaging
 * @return
-*     - LE_OK          Successfully changed the state of Virtual Machine.
-*     - LE_FAULT       Failed.
+*     - LE_OK                    Successfully changed the state of Virtual Machine.
+*     - LE_CAP_NOT_IMPLEMENTED   The underlying platform hasn't implemented this capability.
+*     - LE_CAP_UNSUPPORTED       Unsupported due to platform capability/software limitations.
+*     - LE_BAD_PARAMETER         Invalid state.
+*     - LE_FAULT                 Failed.
 *
-
 */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetVMPowerState
@@ -529,8 +536,8 @@ FUNCTION le_result_t SetVMPowerState
  *
  * @instaging
  * @return
- *     - non-null pointer -- The Virtual Machines List reference.
- *     - null pointer -- Internal error.
+ *     - non-null pointer         The Virtual Machines List reference.
+ *     - null pointer             Internal error.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -544,9 +551,9 @@ FUNCTION VMList GetMachineList
  *
  * @instaging
  * @return
- *     - LE_OK -- Succeeded.
- *     - LE_BAD_PARAMETER -- Bad parameters.
- *     - LE_NOT_FOUND -- Empty list.
+ *     - LE_OK                    Succeeded.
+ *     - LE_BAD_PARAMETER         Bad parameters.
+ *     - LE_NOT_FOUND             Empty list.
  *
  * @b NOTE: This is supported only on SA525M.
  */
@@ -565,9 +572,9 @@ FUNCTION le_result_t GetFirstMachineName
  *
  * @instaging
  * @return
- *     - LE_OK -- Succeeded.
- *     - LE_BAD_PARAMETER -- Bad parameters.
- *     - LE_NOT_FOUND -- The end of the list.
+ *     - LE_OK                   Succeeded.
+ *     - LE_BAD_PARAMETER        Bad parameters.
+ *     - LE_NOT_FOUND            The end of the list.
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -584,8 +591,9 @@ FUNCTION le_result_t GetNextMachineName
  * @instaging
  *
  * @return
- *  - LE_BAD_PARAMETER -- Bad parameters.
- *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER            Bad parameters.
+ *  - LE_NOT_FOUND                The end of the list.
+ *  - LE_OK                       Succeeded.
  *
  * @b NOTE: This is supported only on SA525M.
  */
@@ -619,6 +627,9 @@ FUNCTION SendStateChangeAck
  * @b NOTE: This is supported only on SA525M.
  *
  * @instaging
+ * @return
+ *     - LE_OK                    Succeeded.
+ *     - LE_BAD_PARAMETER         Invalid consolidatedAckInfoRef or unrespClients.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetNackClientInfo
@@ -635,6 +646,9 @@ FUNCTION le_result_t GetNackClientInfo
  * @b NOTE: This is supported only on SA525M.
  *
  * @instaging
+ * @return
+ *     - LE_OK                    Succeeded.
+ *     - LE_BAD_PARAMETER         Invalid consolidatedAckInfoRef or unrespClients.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetUnrespClientInfo
@@ -649,6 +663,11 @@ FUNCTION le_result_t GetUnrespClientInfo
  *  Sets the power mode to facilitate the system level power management.
  *
  * @b NOTE: This is supported only on SA525M.
+ *
+ * @instaging
+ * @return
+ *     - LE_OK                    Succeeded.
+ *     - LE_BAD_PARAMETER         Invalid powerMode.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetPowerMode
@@ -663,6 +682,11 @@ FUNCTION le_result_t SetPowerMode
  * @b NOTE: This is supported only on SA525M.
  *
  * @instaging
+ * @return
+ *     - LE_OK                    Succeeded.
+ *     - LE_CAP_NOT_IMPLEMENTED   The underlying platform hasn't implemented this capability.
+ *     - LE_CAP_UNSUPPORTED       Unsupported due to platform capability/software limitations.
+ *     - LE_FAULT                 Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t SetModemWakeupSel
@@ -677,6 +701,12 @@ FUNCTION le_result_t SetModemWakeupSel
  * @b NOTE: This is supported only on SA525M.
  *
  * @instaging
+ * @return
+ *     - LE_OK                    Succeeded.
+ *     - LE_BAD_PARAMETER         Invalid wsBitmaskPtr.
+ *     - LE_CAP_NOT_IMPLEMENTED   The underlying platform hasn't implemented this capability.
+ *     - LE_CAP_UNSUPPORTED       Unsupported due to platform capability/software limitations.
+ *     - LE_FAULT                 Failed.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetModemWakeupSel
@@ -691,6 +721,9 @@ FUNCTION le_result_t GetModemWakeupSel
  * @b NOTE: This is supported only on SA525M.
  *
  * @instaging
+ * @return
+ *     - LE_OK                    Succeeded.
+ *     - LE_BAD_PARAMETER         Invalid wsBitmaskPtr.
  */
 //--------------------------------------------------------------------------------------------------
 FUNCTION le_result_t GetModemAwakeReason
