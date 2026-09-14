@@ -197,6 +197,62 @@
  * - taf_dcs_GetThroughputQueueSize() -- Gets the throughput queue size.
  * - taf_dcs_GetThroughputQuality() -- Gets the throughput quality.
  *
+ * @section c_taf_dcs_tcp_wake TCP keep-alive offload and power save filtering
+ *
+ * These APIs support the following related low-power scenarios:
+ *
+ * - The modem sends TCP keep-alive packets on behalf of the application processor (AP) while the
+ *   AP is suspended, so the peer's TCP stack doesn't time out the connection. The peer can then
+ *   send a packet at any time to wake the AP.
+ * - The AP is woken up only when a specific packet arrives, instead of on every downlink packet,
+ *   typically a packet on an existing TCP connection that is also being kept alive.
+ *
+ * For the first scenario, register the TCP connection to watch with taf_dcs_EnableTcpMonitor() and
+ * start an offload on the returned reference with taf_dcs_StartTcpKeepAliveOffload(). Stop it with
+ * taf_dcs_StopTcpKeepAliveOffload() when no longer needed.
+ *
+ * @verbatim
+   result = taf_dcs_EnableTcpMonitor(phoneId, &tcpParams, &monitorRef);
+   result = taf_dcs_StartTcpKeepAliveOffload(monitorRef, 30000, &offloadRef);
+   @endverbatim
+ *
+ * For the second scenario, describe the packet that should wake the AP with a
+ * taf_dcs_PacketFilterConfig_t and apply it with taf_dcs_AddPowerSaveFilter(). Set
+ * taf_dcs_PacketFilterConfig_t::ruleMask to select which fields of the filter are matched (for
+ * example IPv4/IPv6 addresses, DSCP/traffic class, ICMP type/code, TCP/UDP ports, or ESP/AH SPI).
+ * To match a packet on the same TCP connection used for keep-alive, use the connection's addresses
+ * and ports from taf_dcs_TcpKeepAliveParams_t.
+ *
+ * @verbatim
+   PacketFilterConfig config = {0};
+   config.listType = TAF_DCS_PACKET_FILTER_LIST_TYPE_WHITELIST;
+   config.ruleMask = TAF_DCS_PACKET_FILTER_RULE_MASK_TCP_DEST_PORT;
+   config.destPort = tcpParams.destinationPort;
+   result = taf_dcs_AddPowerSaveFilter(phoneId, config);
+   @endverbatim
+ *
+ * Filters can be added or removed at any time, whether power save filtering is currently on or
+ * off. Turn filtering on and off with
+ * taf_dcs_SetPowerSaveFilterMode(); the current mode can be read back with
+ * taf_dcs_GetPowerSaveFilterMode(). While filtering is enabled, the modem drops downlink packets
+ * unless they match a configured filter; a matching packet is forwarded and wakes the AP.
+ *
+ * @verbatim
+   taf_dcs_SetPowerSaveFilterMode(phoneId, TAF_DCS_POWER_SAVE_FILTER_MODE_ENABLE);
+   @endverbatim
+ *
+ * @b NOTE: Power save filtering and the configured filters are a single modem-wide setting;
+ * they're not scoped to one connection or profile.
+ *
+ * @b NOTE: The keep-alive offload, the configured filters, and the power save filter mode are tied
+ * to the underlying data call and don't survive the data call being torn down (including a modem
+ * restart). Applications must call taf_dcs_EnableTcpMonitor()/taf_dcs_AddPowerSaveFilter() again
+ * after observing a TAF_DCS_DISCONNECTED session state via taf_dcs_AddSessionStateHandler().
+ *
+ * Use taf_dcs_RemoveAllPowerSaveFilters() to remove all configured filters (there's no API to
+ * remove a single filter), and taf_dcs_DisableTcpMonitor() to release a monitor. Disabling a
+ * monitor also stops any active offload for it.
+ *
  * <HR>
  *
  */
@@ -2488,3 +2544,364 @@ FUNCTION le_result_t SetInterface
     Profile profileRef             IN, ///< The profile reference.
     string  inteface[NAME_MAX_LEN] IN  ///< The interface name.
 ) = 80;
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The power save (data restrict) packet filter mode.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM PowerSaveFilterMode
+{
+    POWER_SAVE_FILTER_MODE_UNKNOWN = 0,    ///< Unknown.
+    POWER_SAVE_FILTER_MODE_DISABLE,        ///< Filtering is disabled; downlink packets are forwarded normally.
+    POWER_SAVE_FILTER_MODE_ENABLE          ///< Filtering is enabled; only packets matching a configured
+                                            ///< filter are forwarded.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The TCP connection to monitor for TCP keep-alive offload.
+ *
+ * @instaging
+ *
+ * @struct taf_dcs_TcpKeepAliveParams_t
+ * @var taf_dcs_TcpKeepAliveParams_t::sourceAddress
+ * Source IPv4 or IPv6 address of the TCP connection.
+ * @var taf_dcs_TcpKeepAliveParams_t::destinationAddress
+ * Destination IPv4 or IPv6 address of the TCP connection.
+ * @var taf_dcs_TcpKeepAliveParams_t::sourcePort
+ * Source TCP port.
+ * @var taf_dcs_TcpKeepAliveParams_t::destinationPort
+ * Destination TCP port.
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+STRUCT TcpKeepAliveParams
+{
+    string sourceAddress[IPV6_ADDR_MAX_LEN];      ///< Source IPv4 or IPv6 address.
+    string destinationAddress[IPV6_ADDR_MAX_LEN]; ///< Destination IPv4 or IPv6 address.
+    uint16 sourcePort;                            ///< Source TCP port.
+    uint16 destinationPort;                       ///< Destination TCP port.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Reference to a monitored TCP connection used for TCP keep-alive offload.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+REFERENCE TcpMonitor;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Reference to an active TCP keep-alive offload.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+REFERENCE TcpKeepAliveOffload;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Registers a TCP connection to monitor for keep-alive offload.
+ *
+ * Enabling a monitor does not, by itself, start sending keep-alive packets. Use
+ * taf_dcs_StartTcpKeepAliveOffload() on the returned reference.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- At least one bad parameter was passed.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t EnableTcpMonitor
+(
+    uint8              phoneId    IN,  ///< Phone ID.
+    TcpKeepAliveParams params     IN,  ///< TCP connection to monitor.
+    TcpMonitor         monitorRef OUT  ///< TCP monitor reference.
+) = 81;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Disables a TCP monitor and releases its reference.
+ *
+ * Stops and releases any active keep-alive offload for this monitor.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_NOT_FOUND -- The monitor reference was not found.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t DisableTcpMonitor
+(
+    TcpMonitor monitorRef IN                ///< The TCP monitor reference.
+) = 82;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Starts a TCP keep-alive offload for a monitored TCP connection.
+ *
+ * A monitor supports one active offload at a time. Starting an offload for a monitor that already
+ * has one fails.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- At least one bad parameter was passed.
+ *  - LE_NOT_FOUND -- The monitor reference was not found.
+ *  - LE_DUPLICATE -- An offload is already active for this monitor.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t StartTcpKeepAliveOffload
+(
+    TcpMonitor          monitorRef IN,     ///< TCP monitor reference.
+    uint32              interval   IN,     ///< Keep-alive interval in milliseconds.
+    TcpKeepAliveOffload offloadRef OUT     ///< TCP keep-alive offload reference.
+) = 83;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Stops a TCP keep-alive offload and releases its reference.
+ *
+ * The monitor stays enabled and a new offload can be started for it.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_NOT_FOUND -- The offload reference was not found.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t StopTcpKeepAliveOffload
+(
+    TcpKeepAliveOffload offloadRef IN       ///< TCP keep-alive offload reference.
+) = 84;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Turns power save packet filtering on or off.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- At least one bad parameter was passed.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t SetPowerSaveFilterMode
+(
+    uint8               phoneId IN, ///< Phone ID.
+    PowerSaveFilterMode mode    IN  ///< Filter mode.
+) = 85;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Gets the current power save packet filter mode.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- At least one bad parameter was passed.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetPowerSaveFilterMode
+(
+    uint8               phoneId IN,  ///< Phone ID.
+    PowerSaveFilterMode mode    OUT  ///< Filter mode.
+) = 86;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Whether a taf_dcs_PacketFilterConfig_t is an allow-list or deny-list entry.
+ *
+ * @instaging
+ *
+ * @note Only WHITELIST is currently supported; taf_dcs_AddPowerSaveFilter() returns
+ * LE_BAD_PARAMETER for UNKNOWN or BLACKLIST.
+ */
+//--------------------------------------------------------------------------------------------------
+ENUM PacketFilterListType
+{
+    PACKET_FILTER_LIST_TYPE_UNKNOWN,   ///< Not specified. Rejected by taf_dcs_AddPowerSaveFilter().
+    PACKET_FILTER_LIST_TYPE_WHITELIST, ///< Allow-list: a matching packet is forwarded/wakes the AP.
+    PACKET_FILTER_LIST_TYPE_BLACKLIST  ///< Deny-list. Not yet supported.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The packet filter field selector for taf_dcs_PacketFilterConfig_t. Set a bit to indicate that
+ * the corresponding field of the filter should be matched.
+ *
+ * @instaging
+ */
+//--------------------------------------------------------------------------------------------------
+BITMASK PacketFilterRuleMask
+{
+    PACKET_FILTER_RULE_MASK_NONE,               ///< No fields set.
+    PACKET_FILTER_RULE_MASK_IPV4_SRC_ADDR,      ///< Match the IPv4 source address.
+    PACKET_FILTER_RULE_MASK_IPV4_DEST_ADDR,     ///< Match the IPv4 destination address.
+    PACKET_FILTER_RULE_MASK_IPV4_TOS,           ///< Match the IPv4 type of service.
+    PACKET_FILTER_RULE_MASK_IPV6_SRC_ADDR,      ///< Match the IPv6 source address.
+    PACKET_FILTER_RULE_MASK_IPV6_DEST_ADDR,     ///< Match the IPv6 destination address.
+    PACKET_FILTER_RULE_MASK_IPV6_TRAFFIC_CLASS, ///< Match the IPv6 traffic class.
+    PACKET_FILTER_RULE_MASK_IPV6_FLOW_LABEL,    ///< Match the IPv6 flow label.
+    PACKET_FILTER_RULE_MASK_ICMP_MSG_TYPE,      ///< Match the ICMP message type.
+    PACKET_FILTER_RULE_MASK_ICMP_MSG_CODE,      ///< Match the ICMP message code.
+    PACKET_FILTER_RULE_MASK_TCP_SRC_PORT,       ///< Match the TCP source port.
+    PACKET_FILTER_RULE_MASK_TCP_SRC_RANGE,      ///< Also match srcRange TCP source ports after
+                                                 ///< srcPort. Requires TCP_SRC_PORT to also be set.
+    PACKET_FILTER_RULE_MASK_TCP_DEST_PORT,      ///< Match the TCP destination port.
+    PACKET_FILTER_RULE_MASK_TCP_DEST_RANGE,     ///< Also match destRange TCP destination ports
+                                                 ///< after destPort. Requires TCP_DEST_PORT to also
+                                                 ///< be set.
+    PACKET_FILTER_RULE_MASK_UDP_SRC_PORT,       ///< Match the UDP source port.
+    PACKET_FILTER_RULE_MASK_UDP_SRC_RANGE,      ///< Also match srcRange UDP source ports after
+                                                 ///< srcPort. Requires UDP_SRC_PORT to also be set.
+    PACKET_FILTER_RULE_MASK_UDP_DEST_PORT,      ///< Match the UDP destination port.
+    PACKET_FILTER_RULE_MASK_UDP_DEST_RANGE,     ///< Also match destRange UDP destination ports
+                                                 ///< after destPort. Requires UDP_DEST_PORT to also
+                                                 ///< be set.
+    PACKET_FILTER_RULE_MASK_ESP_SPI,            ///< Match the ESP security parameter index.
+    PACKET_FILTER_RULE_MASK_AH_SPI              ///< Match the AH security parameter index.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * A power save packet filter definition.
+ *
+ * @instaging
+ *
+ * @struct taf_dcs_PacketFilterConfig_t
+ * @var taf_dcs_PacketFilterConfig_t::listType
+ * Whether this is an allow-list or deny-list entry. Only WHITELIST is currently supported.
+ * @var taf_dcs_PacketFilterConfig_t::ruleMask
+ * Selects which of the fields below are matched.
+ * @var taf_dcs_PacketFilterConfig_t::ipSrcAddr
+ * IPv4 or IPv6 source address.
+ * @var taf_dcs_PacketFilterConfig_t::ipDestAddr
+ * IPv4 or IPv6 destination address.
+ * @var taf_dcs_PacketFilterConfig_t::ipv4SrcAddrSubnetMask
+ * IPv4 source address subnet mask.
+ * @var taf_dcs_PacketFilterConfig_t::ipv4DestAddrSubnetMask
+ * IPv4 destination address subnet mask.
+ * @var taf_dcs_PacketFilterConfig_t::ipv6SrcAddrPrefixLen
+ * IPv6 source address prefix length.
+ * @var taf_dcs_PacketFilterConfig_t::ipv6DestAddrPrefixLen
+ * IPv6 destination address prefix length.
+ * @var taf_dcs_PacketFilterConfig_t::dscpVal
+ * IPv4 type of service or IPv6 traffic class value to match.
+ * @var taf_dcs_PacketFilterConfig_t::dscpMask
+ * Mask applied to dscpVal before comparison.
+ * @var taf_dcs_PacketFilterConfig_t::flowLabel
+ * IPv6 flow label.
+ * @var taf_dcs_PacketFilterConfig_t::srcPort
+ * TCP or UDP source port.
+ * @var taf_dcs_PacketFilterConfig_t::srcRange
+ * The number of additional source ports, starting at srcPort, that also match. Only honored when
+ * the corresponding TCP_SRC_RANGE/UDP_SRC_RANGE bit is set in ruleMask; otherwise only srcPort is
+ * matched.
+ * @var taf_dcs_PacketFilterConfig_t::destPort
+ * TCP or UDP destination port.
+ * @var taf_dcs_PacketFilterConfig_t::destRange
+ * The number of additional destination ports, starting at destPort, that also match. Only
+ * honored when the corresponding TCP_DEST_RANGE/UDP_DEST_RANGE bit is set in ruleMask; otherwise
+ * only destPort is matched.
+ * @var taf_dcs_PacketFilterConfig_t::icmpType
+ * ICMP message type.
+ * @var taf_dcs_PacketFilterConfig_t::icmpCode
+ * ICMP message code.
+ * @var taf_dcs_PacketFilterConfig_t::spi
+ * ESP or AH security parameter index.
+ */
+//--------------------------------------------------------------------------------------------------
+STRUCT PacketFilterConfig
+{
+    PacketFilterListType listType;                      ///< Allow-list or deny-list; only
+                                                         ///< WHITELIST is currently supported.
+    PacketFilterRuleMask ruleMask;                     ///< Selects which fields below are matched.
+    string ipSrcAddr[IPV6_ADDR_MAX_LEN];                ///< IPv4 or IPv6 source address.
+    string ipDestAddr[IPV6_ADDR_MAX_LEN];               ///< IPv4 or IPv6 destination address.
+    uint32 ipv4SrcAddrSubnetMask;                       ///< IPv4 source address subnet mask.
+    uint32 ipv4DestAddrSubnetMask;                      ///< IPv4 destination address subnet mask.
+    uint8 ipv6SrcAddrPrefixLen;                         ///< IPv6 source address prefix length.
+    uint8 ipv6DestAddrPrefixLen;                        ///< IPv6 destination address prefix length.
+    uint8 dscpVal;                                      ///< IPv4 TOS or IPv6 traffic class value.
+    uint8 dscpMask;                                     ///< Mask applied to dscpVal.
+    uint32 flowLabel;                                   ///< IPv6 flow label.
+    uint16 srcPort;                                     ///< TCP or UDP source port.
+    uint16 srcRange;                                    ///< Additional source ports after srcPort;
+                                                         ///< requires the *_SRC_RANGE mask bit.
+    uint16 destPort;                                    ///< TCP or UDP destination port.
+    uint16 destRange;                                   ///< Additional destination ports after
+                                                         ///< destPort; requires the *_DEST_RANGE
+                                                         ///< mask bit.
+    uint8 icmpType;                                     ///< ICMP message type.
+    uint8 icmpCode;                                     ///< ICMP message code.
+    uint32 spi;                                         ///< ESP or AH security parameter index.
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Adds a power save packet filter.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- At least one bad parameter was passed.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t AddPowerSaveFilter
+(
+    uint8              phoneId IN, ///< Phone ID.
+    PacketFilterConfig config  IN  ///< Fields to match.
+) = 87;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Removes all configured power save packet filters.
+ *
+ * @instaging
+ *
+ * @return
+ *  - LE_OK -- Succeeded.
+ *  - LE_BAD_PARAMETER -- At least one bad parameter was passed.
+ *  - LE_UNSUPPORTED -- Not supported by the platform.
+ *  - LE_TIMEOUT -- Response timed out.
+ *  - LE_FAULT -- Failed.
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t RemoveAllPowerSaveFilters
+(
+    uint8 phoneId IN ///< Phone ID.
+) = 88;
