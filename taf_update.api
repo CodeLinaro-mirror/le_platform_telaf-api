@@ -178,7 +178,8 @@ ENUM State
     SYNC_SUCCESS,      ///< Bank synchronization succeeded.
     SYNC_PAUSED,       ///< Bank synchronization paused.
     SYNC_FAIL,         ///< Bank synchronization failed.
-    REPORTING          ///< Reporting state to server.
+    REPORTING,         ///< Reporting state to server.
+    CANCELLED          ///< Operation cancelled before completion.
 };
 
 //--------------------------------------------------------------------------------------------------
